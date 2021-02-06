@@ -1,0 +1,114 @@
+<html>
+<head>
+    <link href="https://assets.shopfront.envato-static.com/styles-4ffeb2c80912c7938da3.css" media="all" rel="stylesheet"
+          type="text/css">
+    <style>
+        body {
+            font-family: arial, sans-serif;
+            font-size: small;
+            margin: 20px;
+        }
+
+        td {
+            padding: 5px;
+            font-size: small;
+        }
+
+        .bullish {
+            background: green;
+            color: white;
+        }
+
+        .bearish {
+            background: red;
+            color: white;
+        }
+
+        .consolidating {
+            background: green;
+            color: white;
+        }
+
+        .breakout {
+            background: green;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<h1>Technical Scanner</h1>
+<form>
+    <input type="button" onclick="window.location.href='/snapshot';" value="Refresh Data"/>
+    <input type="button" onclick="window.location.href='/filter';" value="Refresh Filters"/>
+    <button onClick="window.location.reload();">Refresh Page</button>
+</form>
+{#<form>#}
+{#    <label>#}
+{#        <select name="pattern">#}
+{#            <option value="">-- Select a Pattern --</option>#}
+{#            {% for key in candlestick_patterns %}#}
+{#                <option value="{{ key }}"#}
+{#                        {% if pattern == key %}selected="selected"{% endif %}>{{ candlestick_patterns[key] }}</option>#}
+{#            {% endfor %}#}
+{#        </select>#}
+{#    </label>#}
+{#    <input type="submit" value="Scan"/>#}
+{#</form>#}
+
+<table>
+    <tr>
+        <th>Symbol</th>
+        <th>Company</th>
+        <th>Bull Candle Signal</th>
+        <th>Bear Candle Signal</th>
+    </tr>
+    {% for symbol in stocks %}
+        <tr>
+            <td>
+                <a href="https://www.finviz.com/quote.ashx?t={{  symbol }}"
+                   onmouseover="document.getElementById('place-holder-1').src='https://finviz.com/chart.ashx?t={{ symbol }}&ty=c&ta=1&p=d&s=l';"
+                   onmouseout="document.getElementById('place-holder-1').src='https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png';">
+                   {{ symbol }}
+                    <img src="https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png"
+                         id="place-holder-1" style="zindex: 100; position: absolute;"  alt=""/>
+                </a>
+            </td>
+            <td>
+                {{ stocks[symbol]['company'] }}
+            </td>
+            {% autoescape false %}
+            <td class="bullish">
+                {{ stocks[symbol]['cdl_sum_bul']  | replace(", ", "<br/>") }}
+            </td>
+            <td class="bearish">
+                {{ stocks[symbol]['cdl_sum_ber']  | replace(", ", "<br/>") }}
+            </td>
+            {% endautoescape %}
+
+{#            <tr>#}
+{#                <td colspan="3">#}
+{#                    <img src="https://finviz.com/chart.ashx?t={{ symbol }}&ty=c&ta=1&p=d&s=l" width="75%"/>#}
+{#                </td>#}
+{#            </tr>#}
+        <!-- <tr>
+            <td colspan="3">
+                <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+                <div class="chart" id="candlestick{{ symbol }}">
+                    <script>
+                        var graphs = {{ stocks[symbol]['chart'] | safe }};
+                        Plotly.plot('candlestick{{ symbol }}', graphs, {});
+                    </script>
+                </div>
+            </td>
+        </tr> -->
+    {% endfor %}
+</table>
+
+{#{% for table in tables %}#}
+{#            {{titles[loop.index]}}#}
+{#            {{ table|safe }}#}
+{#{% endfor %}#}
+
+</body>
+</html>
