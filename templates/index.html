@@ -65,7 +65,7 @@
     {% for symbol in stocks %}
         <tr>
             <td>
-                <a href="https://www.finviz.com/quote.ashx?t={{  symbol }}"
+                <a href="https://www.finviz.com/quote.ashx?t={{ symbol }}"
                    onmouseover="document.getElementById('place-holder-1').src='https://finviz.com/chart.ashx?t={{ symbol }}&ty=c&ta=1&p=d&s=l';"
                    onmouseout="document.getElementById('place-holder-1').src='https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png';">
                    {{ symbol }}
@@ -74,7 +74,7 @@
                 </a>
             </td>
             <td>
-                {{ stocks[symbol]['company'] }}
+                {{ stocks[symbol]['Security'] }}
             </td>
             {% autoescape false %}
             <td class="bullish">

@@ -20,17 +20,32 @@ from flask import Flask, request, render_template
 from patterns import candlestick_patterns
 
 # default settings, superseded from html form
-settings = {'consolidating': {'go': False, 'pct': 5},
-            'breakout': {'go': False, 'pct': 2.5},
+settings = {'consolidating': {'go': True, 'pct': 5},
+            'breakout': {'go': True, 'pct': 5},
             'ttm_squeeze': {'go': True},
-            'candlestick': {'go': True}
-            }
+            'candlestick': {'go': True},
+            'sma_filter': {'go': True, 'fast': 25, 'slow': 50}}
+
+
+class Const:
+    # define files
+    dataset_dir = 'datasets'
+    symbols_file = 'symbols.csv'
+    data_file = 'data.pkl'
+    signals_file = 'signals.pkl'
+
+    symbols_file = os.path.join(dataset_dir, symbols_file)
+    data_file = os.path.join(dataset_dir, data_file)
+    signals_file = os.path.join(dataset_dir, signals_file)
+
+    # other constants
+    download = 100
 
 
 class Filter:
     def __init__(self):
         # Read data and optimize
-        df = pd.read_pickle(os.path.join('datasets', 'data.pkl'))
+        df = pd.read_pickle(Const.data_file)
         remove_cols = ['Volume', 'Adj Close']
         df = df.drop(remove_cols, axis=1, level=1)
 
@@ -56,7 +71,7 @@ class Filter:
             #    print('{} errors. {} symbol. {}'.format(i, symbol, e))
 
         # Save the signal table
-        self.signal.to_pickle("datasets/signals.pkl")
+        self.signal.to_pickle(Const.signals_file)
 
     @staticmethod
     def consolidating(df, pct=0, symbol='THE_DUMMY'):
@@ -69,7 +84,7 @@ class Filter:
             return True
         return False
 
-    def breakout(self, df):
+    def breakout(self, df, symbol='THE_DUMMY'):
         pct = settings['breakout']['pct']
         last_close = df[-1:]['Close'].values[0]
         if self.consolidating(df[:-1], pct):
@@ -127,8 +142,20 @@ class Filter:
             status = True
         return status
 
+    @staticmethod
+    def sma_filter(df, symbol='THE_DUMMY'):
+        sma_fast = talib.SMA(df['Close'],
+                             timeperiod=settings['sma_filter']['fast'])
+        sma_slow = talib.SMA(df['Close'],
+                             timeperiod=settings['sma_filter']['slow'])
+
+        if sma_fast[-1] > sma_slow[-1]:
+            return True
+        return False
+
 
 class Chart:
+    """Chart library"""
     @staticmethod
     def style_candlestick(df):
         fig = go.Figure(data=[go.Candlestick(x=df.index,
@@ -173,39 +200,28 @@ class Chart:
 class Snapshot:
     def __init__(self):
         """Save table with symbol financial data from Yahoo Finance"""
-        # define files
-        dataset_dir = 'datasets'
-        symbols_file = 'symbols.csv'
-        data_file = 'data.pkl'
-
-        # path to files
-        symbols_file = os.path.join(dataset_dir, symbols_file)
-        data_file = os.path.join(dataset_dir, data_file)
 
         # create dataset directory if not there
-        if not os.path.exists(dataset_dir):
-            os.makedirs(dataset_dir)
+        if not os.path.exists(Const.dataset_dir):
+            os.makedirs(Const.dataset_dir)
 
         # load symbols, if not there download s&p500 from Wikipedia
-        if os.path.isfile(symbols_file):
-            df = pd.read_csv(symbols_file)
+        if os.path.isfile(Const.symbols_file):
+            df = pd.read_csv(Const.symbols_file)
         else:
-            df = self.download_sp500(symbols_file)
-        symbols = list(df['Symbol'])
+            df = self.download_sp500(Const.symbols_file)
 
         # download and save financial data for each symbol
+        symbols = list(df['Symbol'])
         end_date = datetime.datetime.now()
-        start_date = end_date - datetime.timedelta(days=50)
+        start_date = end_date - datetime.timedelta(days=Const.download)
         data = yf.download(symbols,
-                           group_by="ticker",
                            start=start_date,
-                           end=end_date)
+                           end=end_date,
+                           group_by="ticker")
         data = data.dropna(how='all')
         data = data.dropna(how='all', axis=1)
-        data.to_pickle(data_file)
-
-        # Update de-listed symbols to original symbol file
-        # TO DO: BRK.B
+        data.to_pickle(Const.data_file)
 
         # Apply filters to data once and save in separate file
         Filter()
@@ -222,9 +238,64 @@ class Snapshot:
         # TODO: This works but gives a warning. Fix with the latest.
         df = df.assign(Symbol=lambda x: x['Symbol'].str.replace('.', '-'))
 
-        # save csv to datasets directory
         df.to_csv(symbols_file, index=False)
         return df
+
+
+class Index:
+    signals = None
+    stocks = None
+
+    def __init__(self):
+        self.load_data()
+        self.apply_filters()
+        self.prep_arguments()
+
+    def load_data(self):
+        # load company names and signal table
+        self.signals = pd.read_pickle(Const.signals_file)
+        # TODO: Shorten these up
+        df = pd.read_csv(Const.symbols_file)
+        df = df[['Symbol', 'Security']]
+        df = df.T
+        df.columns = df.iloc[0]
+        df = df.drop(df.index[0])
+        self.stocks = df.to_dict()
+
+        # with open(Const.symbols_file) as f:
+        #     self.stocks = {row[0]: {"company": row[1]}
+        #                    for row in csv.reader(f)}
+
+    def apply_filters(self):
+        """Filter signal table with selections"""
+        signals = self.signals
+
+        # only show the filters wanted
+        for k in settings.keys():
+            if k in signals.columns:
+                signals = signals[signals[k] == settings[k]['go']]
+
+        # remove the nan
+        signals = signals.fillna('')
+
+        self.signals = signals
+
+    def prep_arguments(self):
+        """Prepare argument to be sent to Flask/HTML"""
+        stocks = self.stocks
+
+        # only show symbols that exist in signals
+        stocks = {k: v
+                  for k, v in stocks.items()
+                  if k in list(self.signals.index)}
+
+        # send candle info to server
+        if settings['candlestick']['go']:
+            for symbol, row in self.signals.iterrows():
+                stocks[symbol]['cdl_sum_ber'] = row.cdl_sum_ber
+                stocks[symbol]['cdl_sum_bul'] = row.cdl_sum_bul
+
+        self.stocks = stocks
 
 
 # run in terminal 'flask run', auto-update with 'export FLASK_ENV=development'
@@ -232,65 +303,27 @@ app = Flask(__name__)
 
 
 @app.route("/snapshot")
-def snapshot():
-    # run Snapshot class
+def snapshot_wrapper():
     Snapshot()
-    # Returns confirmation a Flask requirement
-    return 'Success'
+    return 'Success downloading data. Go back.'
 
 
 @app.route("/filter")
 def filter_wrapper():
     Filter()
-    return 'Success filtering'
+    return "Success filtering. <a href='http://localhost:5000'>Go Back</a>"
 
 
-@app.route("/", methods=['POST', 'GET'])
-def index(debug=False):
-    # Read pattern assigned from web portal (Flask)
-    pattern = 'CDLENGULFING' if debug else request.args.get("pattern", False)
-
-    # Apply filters to data once and save in separate file
-    # Filter()
-
-    # load company names and signal table
-    signals = pd.read_pickle("datasets/signals.pkl")
-    with open("datasets/symbols.csv") as f:
-        stocks = {row[0]: {"company": row[1]} for row in csv.reader(f)}
-
-    # Filter signal table with selections
-    for k in settings.keys():
-        if k in signals.columns:
-            signals = signals[signals[k] == settings[k]['go']]
-
-    # Clean-up signals
-    stocks = {k: v for k, v in stocks.items() if k in list(signals.index)}
-    signals = signals.fillna('')
-
-    # send candle info to server
-    for symbol, row in signals.iterrows():
-        stocks[symbol]['cdl_sum_ber'] = row.cdl_sum_ber
-        stocks[symbol]['cdl_sum_bul'] = row.cdl_sum_bul
-
-    if debug:
-        return {"this is": "done"}
-    else:
-        return render_template(
-            "index.html",
-            candlestick_patterns=candlestick_patterns,
-            stocks=stocks,
-            pattern=pattern,
-            # tables=[signals.to_html(classes='data')],
-            # titles=signals.columns.values
-        )
+@app.route("/")
+def index():
+    stocks = Index().stocks
+    return render_template("index.html",
+                           candlestick_patterns=candlestick_patterns,
+                           stocks=stocks)
 
 
 if __name__ == "__main__":
-    debug = False
-    if debug:
-        index(debug=debug)
-    else:
-        app.run(debug=True)
+    app.run(debug=True)
 
 # stocks = {}
 #     if pattern:
@@ -344,6 +377,18 @@ if __name__ == "__main__":
         # # df.to_csv("S&P500-Symbols.csv", columns=['Symbol'])
 
 
+   # return render_template(
+   #      "index.html",
+   #      candlestick_patterns=candlestick_patterns,
+   #      stocks=stocks,
+   #      pattern=pattern,
+   #      # tables=[signals.to_html(classes='data')],
+   #      # titles=signals.columns.values
+   #  )
+
 
 # Tables to html
 # https://stackoverflow.com/questions/52644035/how-to-show-a-pandas-dataframe-into-a-existing-flask-html-table
+
+# TA-Lib reference
+# https://mrjbq7.github.io/ta-lib/
