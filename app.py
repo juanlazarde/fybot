@@ -20,11 +20,11 @@ from flask import Flask, request, render_template
 from patterns import candlestick_patterns
 
 # default settings, superseded from html form
-settings = {'consolidating': {'go':False, 'pct': 5},
+settings = {'consolidating': {'go': False, 'pct': 5},
             'breakout': {'go': False, 'pct': 5},
             'ttm_squeeze': {'go': False},
             'candlestick': {'go': True},
-            'sma_filter': {'go': False, 'fast': 25, 'slow': 50}}
+            'sma_filter': {'go': True, 'fast': 25, 'slow': 50}}
 
 
 class Const:
@@ -53,7 +53,7 @@ class Filter:
         self.symbols = list(df.columns.levels[0])
         self.symbols.sort()
 
-        # Define filters to use and create table with of signals
+        # Define filters to use and create table with signals
         columns = [k for k in settings if settings[k]['go']]
         self.signal = pd.DataFrame(index=self.symbols, columns=columns)
 
@@ -156,6 +156,7 @@ class Filter:
 
 class Chart:
     """Chart library"""
+
     @staticmethod
     def style_candlestick(df):
         fig = go.Figure(data=[go.Candlestick(x=df.index,
@@ -213,6 +214,8 @@ class Snapshot:
 
         # download and save financial data for each symbol
         symbols = list(df['Symbol'])
+        # replace '.' with '-' a Yahoo Finance issue
+        symbols = [x.replace('.', '-') for x in symbols]
         end_date = datetime.datetime.now()
         start_date = end_date - datetime.timedelta(days=Const.download)
         data = yf.download(symbols,
@@ -233,11 +236,6 @@ class Snapshot:
             'https://en.wikipedia.org/wiki/List_of_S%26P_500_companies')
         df = table[0]
         df = df[['Symbol', 'Security', 'GICS Sector', 'GICS Sub-Industry']]
-
-        # replace '.' with '-' a Yahoo Finance issue
-        # TODO: This works but gives a warning. Fix with the latest.
-        df = df.assign(Symbol=lambda x: x['Symbol'].str.replace('.', '-'))
-
         df.to_csv(symbols_file, index=False)
         return df
 
@@ -255,7 +253,8 @@ class Index:
         # load company names and signal table
         self.signals = pd.read_pickle(Const.signals_file)
 
-        df = pd.read_csv(Const.symbols_file, index_col='Symbol', usecols=[0,1])
+        df = pd.read_csv(Const.symbols_file, index_col='Symbol',
+                         usecols=[0, 1])
         self.stocks = df.T.to_dict()
 
         # with open(Const.symbols_file) as f:
@@ -301,7 +300,8 @@ app = Flask(__name__)
 @app.route("/snapshot")
 def snapshot_wrapper():
     Snapshot()
-    return 'Success downloading data. Go back.'
+    return "Success downloading data." \
+           " <a href='http://localhost:5000'>Go Back</a>"
 
 
 @app.route("/filter")
@@ -348,40 +348,52 @@ if __name__ == "__main__":
 #             except Exception as e:
 #                 print("error", str(e))
 
-        # if os.path.isfile(self.symbols):
-        #     with open(self.symbols, mode='r') as f:
-        #         companies = {rows[0]: rows[1] for rows in csv.reader(f)}
-        # else:
-        #     companies = self.download_sp500()
+# if os.path.isfile(self.symbols):
+#     with open(self.symbols, mode='r') as f:
+#         companies = {rows[0]: rows[1] for rows in csv.reader(f)}
+# else:
+#     companies = self.download_sp500()
 
-        # symbols = [k for k in companies.keys()]
-        # symbols = list(set(symbols))
-        # symbols.sort()
+# symbols = [k for k in companies.keys()]
+# symbols = list(set(symbols))
+# symbols.sort()
 
-        # Update de-listed symbols to original symbol file
+# Update de-listed symbols to original symbol file
 
-        # matched = {k: v for k, v in companies.items() if k in data.columns}
-        # sorted(matched)
-        # with open("datasets/symbols.csv", "w", newline="") as f:
-        #     w = csv.writer(f)
-        #     for k, v in matched.items():
-        #         w.writerow([k, v])
-        #
-        #
-        # # df = df.sort_values(by='Security', key=lambda col: col.str.lower())
-        # df.to_csv(symbols_file, index=False)
-        # # df.to_csv("S&P500-Symbols.csv", columns=['Symbol'])
+# matched = {k: v for k, v in companies.items() if k in data.columns}
+# sorted(matched)
+# with open("datasets/symbols.csv", "w", newline="") as f:
+#     w = csv.writer(f)
+#     for k, v in matched.items():
+#         w.writerow([k, v])
+#
+#
+# # df = df.sort_values(by='Security', key=lambda col: col.str.lower())
+# df.to_csv(symbols_file, index=False)
+# # df.to_csv("S&P500-Symbols.csv", columns=['Symbol'])
 
 
-   # return render_template(
-   #      "index.html",
-   #      candlestick_patterns=candlestick_patterns,
-   #      stocks=stocks,
-   #      pattern=pattern,
-   #      # tables=[signals.to_html(classes='data')],
-   #      # titles=signals.columns.values
-   #  )
+# return render_template(
+#      "index.html",
+#      candlestick_patterns=candlestick_patterns,
+#      stocks=stocks,
+#      pattern=pattern,
+#      # tables=[signals.to_html(classes='data')],
+#      # titles=signals.columns.values
+#  )
 
+#
+# # TODO: Shorten these up
+# df = pd.read_csv(Const.symbols_file)
+# df = df[['Symbol', 'Security']]
+# df = df.T
+# df.columns = df.iloc[0]
+# df = df.drop(df.index[0])
+# self.stocks = df.to_dict()
+
+# #        # replace '.' with '-' a Yahoo Finance issue
+#         df = df.assign(
+#             Symbol=lambda x: x['Symbol'].str.replace('.', '-', regex=True))
 
 # Tables to html
 # https://stackoverflow.com/questions/52644035/how-to-show-a-pandas-dataframe-into-a-existing-flask-html-table
