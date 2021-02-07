@@ -20,11 +20,11 @@ from flask import Flask, request, render_template
 from patterns import candlestick_patterns
 
 # default settings, superseded from html form
-settings = {'consolidating': {'go': True, 'pct': 5},
-            'breakout': {'go': True, 'pct': 5},
-            'ttm_squeeze': {'go': True},
+settings = {'consolidating': {'go':False, 'pct': 5},
+            'breakout': {'go': False, 'pct': 5},
+            'ttm_squeeze': {'go': False},
             'candlestick': {'go': True},
-            'sma_filter': {'go': True, 'fast': 25, 'slow': 50}}
+            'sma_filter': {'go': False, 'fast': 25, 'slow': 50}}
 
 
 class Const:
@@ -254,13 +254,9 @@ class Index:
     def load_data(self):
         # load company names and signal table
         self.signals = pd.read_pickle(Const.signals_file)
-        # TODO: Shorten these up
-        df = pd.read_csv(Const.symbols_file)
-        df = df[['Symbol', 'Security']]
-        df = df.T
-        df.columns = df.iloc[0]
-        df = df.drop(df.index[0])
-        self.stocks = df.to_dict()
+
+        df = pd.read_csv(Const.symbols_file, index_col='Symbol', usecols=[0,1])
+        self.stocks = df.T.to_dict()
 
         # with open(Const.symbols_file) as f:
         #     self.stocks = {row[0]: {"company": row[1]}
