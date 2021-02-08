@@ -10,8 +10,7 @@ HOME_HTML = """
     <html><body>
         <h2>Scan the Market</h2>
         <form action="/greet">
-            What's your name? <input type='text' name='username'><br>
-            What's your favorite food? <input type='text' name='favfood'><br>
+            What's your name? <input type='text' name='username'><br><br>
             consolidating range (percentage) <input type='text' name='consolidating_pct'><br>
             breakout percentage <input type='text' name='breakout_pct'><br>
             ttm squeeze flag <input type='checkbox' name='ttm_squeeze_flag' value = True><br>
@@ -28,7 +27,7 @@ def greet():
 
     consolidating_pct = request.args.get('consolidating_pct', '')
     breakout_pct = request.args.get('breakout_pct', '')
-    ttm_squeeze_flag = request.args.get('ttm_squeeeze_flag',False)
+    ttm_squeeze_flag = request.args.get('ttm_squeeeze_flag', False)
     candlestick_flag = request.args.get('candlestick_flag', False)
     sma_filter_fast = request.args.get('sma_filter_fast', '')
     sma_filter_slow = request.args.get('sma_filter_slow', '')
@@ -41,24 +40,23 @@ def greet():
 
     if consolidating_pct == '':
         settings['consolidating']['go'] = False
-    
+
     if breakout_pct == '':
         settings['breakout']['go'] = False
-        
+
     if (sma_filter_fast == '' ) or (sma_filter_slow == ''):
         settings['sma_filter']['go'] = False
-        
+
     if username == '':
         username = 'World'
 
-    msg = ('consolidating pct is set to ' + str(settings['consolidating']['go']) + ', percent is ' +  settings['consolidating']['pct'] + 
-           '</br> breakout_pct is set to ' + str(settings['breakout']['go']) + ', percent is ' + settings['breakout']['pct'] + 
-           '</br> ttm squeeze is set to ' + str(settings['ttm_squeeze']['go']) + 
-           '</br> candlestick is set to ' + str(settings['candlestick']['go']) + 
-           '</br> sma fiter is set to ' + str(settings['sma_filter']['go']) + 
-           '</br> sma fiter settings are - Fast: ' + str(settings['sma_filter']['fast']) + ', Slow: ' + str(settings['sma_filter']['slow'])
-           )
-    
+    msg = ('consolidating pct is set to ' + str(settings['consolidating']['go']) + ', percent is ' +  settings['consolidating']['pct'] +
+           '</br> breakout_pct is set to ' + str(settings['breakout']['go']) + ', percent is ' + settings['breakout']['pct'] +
+           '</br> ttm squeeze is set to ' + str(settings['ttm_squeeze']['go']) +
+           '</br> candlestick is set to ' + str(settings['candlestick']['go']) +
+           '</br> sma fiter is set to ' + str(settings['sma_filter']['go']) +
+           '</br> sma fiter settings are - Fast: ' + str(settings['sma_filter']['fast']) + ', Slow: ' + str(settings['sma_filter']['slow']))
+
     return GREET_HTML.format(username, msg)
 
 GREET_HTML = """
