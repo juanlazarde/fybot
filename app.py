@@ -312,18 +312,18 @@ def index():
 
         active_filters = {'consolidating':
                           {'go': fltr_me('consolidating'),
-                           'pct': frm_get('consolidating_pct')},
+                           'pct': int(frm_get('consolidating_pct'))},
                           'breakout':
                           {'go': fltr_me('breakout'),
-                           'pct': frm_get('breakout_pct')},
+                           'pct': int(frm_get('breakout_pct'))},
                           'ttm_squeeze':
                           {'go': fltr_me('ttm_squeeze')},
                           'candlestick':
                           {'go': fltr_me('candlestick')},
                           'sma_filter':
                           {'go': fltr_me('sma_filter'),
-                           'fast': frm_get('sma_fast'),
-                           'slow': frm_get('sma_slow')}}
+                           'fast': int(frm_get('sma_fast')),
+                           'slow': int(frm_get('sma_slow'))}}
 
         Filter(active_filters)
         stocks = Index(active_filters).stocks
