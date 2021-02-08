@@ -65,7 +65,7 @@ class Filter:
 
     def consolidating(self, **kwargs):
         df = kwargs['df']
-        pct = kwargs['pct']
+        pct = kwargs['pct'] if 'pct' in kwargs.keys() else 0
         pct = pct if pct > 0 else self.settings['consolidating']['pct']
         recent_candlesticks = df[-15:]
         max_close = recent_candlesticks['Close'].max()
@@ -338,7 +338,7 @@ def index():
 
         active_filters = {'consolidating':
                           {'go': fltr_me('consolidating'),
-                           'pct': int(frm_get('consolidating_pct'))},
+                           'pct': float(frm_get('consolidating_pct'))},
 
                           'breakout':
                           {'go': fltr_me('breakout'),
