@@ -9,6 +9,9 @@ import datetime
 import json
 import os
 
+import requests
+from lxml import html
+
 import pandas as pd
 import plotly as pt
 import plotly.graph_objs as go
@@ -141,6 +144,25 @@ class Filter:
 
         return True if sma_fast[-1] > sma_slow[-1] else False
 
+    def investor_reco(self, **kwargs):
+        # scrape finviz for latest 3 investor status
+        symbol = kwargs['symbol']
+        site = 'https://www.finviz.com/quote.ashx?t={}'.format(symbol)
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        search = '//table[@class="fullview-ratings-outer"]//tr[1]//text()'
+
+        screen = requests.get(site, headers=headers)
+        tree = html.fromstring(screen.content).xpath(search)
+
+        bull_words = ['Buy', 'Outperform', 'Overweight', 'Upgrade']
+        bear_words = ['Sell', 'Underperform', 'Underweight', 'Downgrade']
+        bull = sum([tree.count(x) for x in bull_words])
+        bear = sum([tree.count(x) for x in bear_words])
+
+        self.signal.loc[symbol, 'investor_sum'] = \
+            "Bull {}, Bear {}".format(bull, bear)
+        return True
+
 
 class Chart:
     """Chart library"""
@@ -272,6 +294,10 @@ class Index:
                 stocks[symbol]['cdl_sum_ber'] = row.cdl_sum_ber
                 stocks[symbol]['cdl_sum_bul'] = row.cdl_sum_bul
 
+        if self.settings['investor_reco']['go']:
+            for symbol, row in self.signals.iterrows():
+                stocks[symbol]['investor_sum'] = row.investor_sum
+
         self.stocks = stocks
 
 
@@ -313,17 +339,25 @@ def index():
         active_filters = {'consolidating':
                           {'go': fltr_me('consolidating'),
                            'pct': int(frm_get('consolidating_pct'))},
+
                           'breakout':
                           {'go': fltr_me('breakout'),
-                           'pct': int(frm_get('breakout_pct'))},
+                           'pct': float(frm_get('breakout_pct'))},
+
                           'ttm_squeeze':
                           {'go': fltr_me('ttm_squeeze')},
+
                           'candlestick':
                           {'go': fltr_me('candlestick')},
+
                           'sma_filter':
                           {'go': fltr_me('sma_filter'),
-                           'fast': int(frm_get('sma_fast')),
-                           'slow': int(frm_get('sma_slow'))}}
+                           'fast': float(frm_get('sma_fast')),
+                           'slow': float(frm_get('sma_slow'))},
+
+                          'investor_reco':
+                          {'go': fltr_me('investor_reco')}
+                          }
 
         Filter(active_filters)
         stocks = Index(active_filters).stocks

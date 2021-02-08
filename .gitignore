@@ -4,3 +4,5 @@
 /venv/
 *.pyc
 /.idea
+/financial_scanner.bat
+/testing.py

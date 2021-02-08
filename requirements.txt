@@ -1,5 +1,8 @@
-flask~=1.1.2
+flask>=1.1.2
 TA-lib
-pandas~=1.2.1
-yfinance~=0.1.55
-plotly~=4.14.3
+pandas>=1.2.1
+yfinance>=0.1.55
+plotly>=4.14.3
+
+requests>=2.25.1
+lxml>=4.6.2
