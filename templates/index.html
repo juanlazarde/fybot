@@ -27,6 +27,16 @@
             font-size: small;
         }
 
+        input[type=number]{
+            border-top-style: hidden;
+            border-right-style: hidden;
+            border-left-style: hidden;
+            border-bottom-style: groove;
+            background-color: #eee;
+            width: 40px;
+            text-align: center;
+        }
+
         .bullish {
             background: green;
             color: white;
@@ -60,48 +70,40 @@
     <table>
         <tr>
             <td>
-                <label><input type='checkbox' name='filter' value='consolidating'> Consolidating</label>
-            </td>
-            <td>
-                <label>Consolidating within <input type='number' name='consolidating_pct' value="2" style="width: 50px">%</label>
+                <label><input type='checkbox' name='filter' value='consolidating' {% if active_filters['consolidating']['go'] == True %}checked{% endif %}> Consolidating</label>
+                <label> within <input type='number' name='consolidating_pct' value="{{ active_filters['consolidating']['pct'] }}" min="0" step="0.5">%</label>
             </td>
         </tr>
         <tr>
             <td>
-                <label><input type='checkbox' name='filter' value='breakout'> Breakout</label>
-            </td>
-            <td>
-                <label>Breakout over <input type='number' name='breakout_pct' value="2.5" style="width: 50px">%</label>
+                <label><input type='checkbox' name='filter' value='breakout' {% if active_filters['breakout']['go'] == True %}checked{% endif %}> Breakout</label>
+                <label> over <input type='number' name='breakout_pct' value="{{ active_filters['breakout']['pct'] }}" min="0" step="0.5">%</label>
             </td>
         </tr>
         <tr>
             <td>
-                <label><input type='checkbox' name='filter' value='ttm_squeeze'> TTM Squeeze</label>
+                <label><input type='checkbox' name='filter' value='ttm_squeeze' {% if active_filters['ttm_squeeze']['go'] == True %}checked{% endif %}> TTM Squeeze</label>
             </td>
         </tr>
         <tr>
             <td>
-                <label><input type='checkbox' name='filter' value='candlestick' checked> Candlestick</label>
+                <label><input type='checkbox' name='filter' value='candlestick' {% if active_filters['candlestick']['go'] == True %}checked{% endif %}> Candlestick</label>
             </td>
         </tr>
         <tr>
             <td>
-                <label><input type='checkbox' name='filter' value='sma_filter'> SMA Fast above Slow</label>
-            </td>
-            <td>
-                <label>SMA Fast <input type='number' name='sma_fast' value="25" style="width: 50px"> days</label><br>
-                <label>SMA Slow <input type='number' name='sma_slow' value="50" style="width: 50px"> days</label>
+                <label><input type='checkbox' name='filter' value='sma_filter' {% if active_filters['sma_filter']['go'] == True %}checked{% endif %}> SMA crossover</label>
+                <label> Fast <input type='number' name='sma_fast' value="{{ active_filters['sma_filter']['fast'] }}" min="0" step="5"> & </label>
+                <label>Slow <input type='number' name='sma_slow' value="{{ active_filters['sma_filter']['slow'] }}" min="0" step="5"> days</label>
             </td>
         </tr>
         <tr>
-            <td colspan="2">
+            <td>
                 <label><input type='checkbox' name='filter' value='investor_reco'> Investor Reco (finviz.com). Takes a long time</label>
             </td>
         </tr>
     </table>
     <input type="submit" value="Refresh Filters">
-{#    onclick="window.location.href='/filter';" />#}
-    {#    <input type="submit" onclick="window.location.href='/filter';" value="Refresh Filters"/>#}
 </form>
 {#<form>#}
 {#    <label>#}

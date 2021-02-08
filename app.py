@@ -315,6 +315,31 @@ def snapshot_wrapper():
 @app.route("/", methods=['GET', 'POST'])
 def index():
     stocks = {}
+
+    # DEFAULTS
+    active_filters = {'consolidating':
+                          {'go': True,
+                           'pct': 7},
+
+                      'breakout':
+                          {'go': False,
+                           'pct': 2.5},
+
+                      'ttm_squeeze':
+                          {'go': False},
+
+                      'candlestick':
+                          {'go': True},
+
+                      'sma_filter':
+                          {'go': False,
+                           'fast': 25,
+                           'slow': 50},
+
+                      'investor_reco':
+                          {'go': False}
+                      }
+
     modified_time = os.stat(S.data_file).st_mtime
     last_modified = datetime.datetime.fromtimestamp(modified_time)
     last_modified_fmt = last_modified.strftime('%d-%m-%Y %H:%M %p')
@@ -365,7 +390,8 @@ def index():
 
     return render_template("index.html",
                            stocks=stocks,
-                           data_last_modified=last_modified_fmt)
+                           data_last_modified=last_modified_fmt,
+                           active_filters=active_filters)
 
 
 if __name__ == "__main__":
