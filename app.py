@@ -455,3 +455,6 @@ if __name__ == "__main__":
 
 # TA-Lib reference
 # https://mrjbq7.github.io/ta-lib/
+
+# Sraping xpath cheatsheet
+# https://gist.github.com/LeCoupa/8c305ec8c713aad07b14
