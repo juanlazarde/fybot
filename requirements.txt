@@ -1,5 +1,5 @@
 flask~=1.1.2
-TA-Lib
+TA-lib
 pandas~=1.2.1
 yfinance~=0.1.55
 plotly~=4.14.3

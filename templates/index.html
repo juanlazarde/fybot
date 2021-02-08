@@ -1,5 +1,9 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-compatible" content="ie/edge>
     <link href="https://assets.shopfront.envato-static.com/styles-4ffeb2c80912c7938da3.css" media="all" rel="stylesheet"
           type="text/css">
     <style>
@@ -34,13 +38,56 @@
             color: white;
         }
     </style>
+    <title>Financial Scanner</title>
 </head>
 <body>
 <h1>Technical Scanner</h1>
-<form>
+<form action="#" method="GET">
     <input type="button" onclick="window.location.href='/snapshot';" value="Refresh Data"/>
-    <input type="button" onclick="window.location.href='/filter';" value="Refresh Filters"/>
-    <button onClick="window.location.reload();">Refresh Page</button>
+{#    <button onClick="window.location.reload();">Refresh Page</button>#}
+    <br>
+</form>
+<form action="#" method="POST">
+    <table>
+        <tr>
+            <td>
+                <label><input type='checkbox' name='filter' value='consolidating'> Consolidating</label>
+            </td>
+            <td>
+                <label>Consolidating range (percentage)<input type='text' name='consolidating_pct' value="2">%</label>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label><input type='checkbox' name='filter' value='breakout'> Breakout</label>
+            </td>
+            <td>
+                <label>Breakout percentage <input type='text' name='breakout_pct' value="2.5">%</label>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label><input type='checkbox' name='filter' value='ttm_squeeze'> TTM Squeeze</label>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label><input type='checkbox' name='filter' value='candlestick' checked> Candlestick</label>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label><input type='checkbox' name='filter' value='sma_filter'> SMA Fast above Slow</label>
+            </td>
+            <td>
+                <label>SMA Fast <input type='text' name='sma_fast' value="50"> days</label><br>
+                <label>SMA Slow <input type='text' name='sma_slow' value="100"> days</label>
+            </td>
+        </tr>
+    </table>
+    <input type="submit" value="Refresh Filters">
+{#    onclick="window.location.href='/filter';" />#}
+    {#    <input type="submit" onclick="window.location.href='/filter';" value="Refresh Filters"/>#}
 </form>
 {#<form>#}
 {#    <label>#}
@@ -63,33 +110,33 @@
         <th>Bear Candle Signal</th>
     </tr>
     {% for symbol in stocks %}
-        <tr>
-            <td>
-                <a href="https://www.finviz.com/quote.ashx?t={{ symbol }}"
-                   onmouseover="document.getElementById('place-holder-1').src='https://finviz.com/chart.ashx?t={{ symbol }}&ty=c&ta=1&p=d&s=l';"
-                   onmouseout="document.getElementById('place-holder-1').src='https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png';">
-                   {{ symbol }}
-                    <img src="https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png"
-                         id="place-holder-1" style="zindex: 100; position: absolute;"  alt=""/>
-                </a>
-            </td>
-            <td>
-                {{ stocks[symbol]['Security'] }}
-            </td>
-            {% autoescape false %}
-            <td class="bullish">
-                {{ stocks[symbol]['cdl_sum_bul']  | replace(", ", "<br/>") }}
-            </td>
-            <td class="bearish">
-                {{ stocks[symbol]['cdl_sum_ber']  | replace(", ", "<br/>") }}
-            </td>
-            {% endautoescape %}
+    <tr>
+        <td>
+            <a href="https://www.finviz.com/quote.ashx?t={{ symbol }}"
+               onmouseover="document.getElementById('place-holder-1').src='https://finviz.com/chart.ashx?t={{ symbol }}&ty=c&ta=1&p=d&s=l';"
+               onmouseout="document.getElementById('place-holder-1').src='https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png';">
+                {{ symbol }}
+                <img src="https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png"
+                     id="place-holder-1" style="zindex: 100; position: absolute;"  alt=""/>
+            </a>
+        </td>
+        <td>
+            {{ stocks[symbol]['Security'] }}
+        </td>
+        {% autoescape false %}
+        <td class="bullish">
+            {{ stocks[symbol]['cdl_sum_bul']  | replace(", ", "<br/>") }}
+        </td>
+        <td class="bearish">
+            {{ stocks[symbol]['cdl_sum_ber']  | replace(", ", "<br/>") }}
+        </td>
+        {% endautoescape %}
 
-{#            <tr>#}
-{#                <td colspan="3">#}
-{#                    <img src="https://finviz.com/chart.ashx?t={{ symbol }}&ty=c&ta=1&p=d&s=l" width="75%"/>#}
-{#                </td>#}
-{#            </tr>#}
+        {#            <tr>#}
+        {#                <td colspan="3">#}
+        {#                    <img src="https://finviz.com/chart.ashx?t={{ symbol }}&ty=c&ta=1&p=d&s=l" width="75%"/>#}
+        {#                </td>#}
+        {#            </tr>#}
         <!-- <tr>
             <td colspan="3">
                 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
@@ -102,7 +149,7 @@
                 </div>
             </td>
         </tr> -->
-    {% endfor %}
+        {% endfor %}
 </table>
 
 {#{% for table in tables %}#}
