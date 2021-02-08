@@ -315,11 +315,12 @@ def snapshot_wrapper():
 @app.route("/", methods=['GET', 'POST'])
 def index():
     stocks = {}
+    modified_time = os.stat(S.data_file).st_mtime
+    last_modified = datetime.datetime.fromtimestamp(modified_time)
+    last_modified_fmt = last_modified.strftime('%d-%m-%Y %H:%M %p')
 
     if request.method == 'GET':
         if os.path.isfile(S.data_file):
-            modified_time = os.stat(S.data_file).st_mtime
-            last_modified = datetime.datetime.fromtimestamp(modified_time)
             now = datetime.datetime.now()
             last24 = datetime.timedelta(hours=24)
             if now - last_modified > last24:
@@ -363,7 +364,8 @@ def index():
         stocks = Index(active_filters).stocks
 
     return render_template("index.html",
-                           stocks=stocks)
+                           stocks=stocks,
+                           data_last_modified=last_modified_fmt)
 
 
 if __name__ == "__main__":

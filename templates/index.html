@@ -1,14 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Fundamental  -->
     <meta charset="UTF-8">
+    <title>Financial Scanner</title>
+    <meta name="desciption" content>
+    <meta name="author" content>
+    <!-- Mobile needs  -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-compatible" content="ie/edge>
-    <link href="https://assets.shopfront.envato-static.com/styles-4ffeb2c80912c7938da3.css" media="all" rel="stylesheet"
-          type="text/css">
+    <!-- Fonts  -->
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <!-- CSS  -->
+    <link rel="stylesheet" href="http://getskeleton.com/dist/css/normalize.css">
+{#    <link rel="stylesheet" href="http://getskeleton.com/dist/css/skeleton.css">#}
+{#    <link rel="stylesheet" crossorigin="anonymous" href="http://gc.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cDovL2dldHNrZWxldG9uLmNvbS8">#}
+{#    <script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js"></script>#}
     <style>
         body {
-            font-family: arial, sans-serif;
+            font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: small;
             margin: 20px;
         }
@@ -38,12 +47,12 @@
             color: white;
         }
     </style>
-    <title>Financial Scanner</title>
 </head>
 <body>
 <h1>Technical Scanner</h1>
 <form action="#" method="GET">
     <input type="button" onclick="window.location.href='/snapshot';" value="Refresh Data"/>
+     Last update: {{ data_last_modified }}
 {#    <button onClick="window.location.reload();">Refresh Page</button>#}
     <br>
 </form>
@@ -54,7 +63,7 @@
                 <label><input type='checkbox' name='filter' value='consolidating'> Consolidating</label>
             </td>
             <td>
-                <label>Consolidating range (percentage)<input type='text' name='consolidating_pct' value="2">%</label>
+                <label>Consolidating within <input type='text' name='consolidating_pct' value="2" size="5">%</label>
             </td>
         </tr>
         <tr>
@@ -62,7 +71,7 @@
                 <label><input type='checkbox' name='filter' value='breakout'> Breakout</label>
             </td>
             <td>
-                <label>Breakout percentage <input type='text' name='breakout_pct' value="2.5">%</label>
+                <label>Breakout over <input type='text' name='breakout_pct' value="2.5" size="5">%</label>
             </td>
         </tr>
         <tr>
@@ -80,8 +89,8 @@
                 <label><input type='checkbox' name='filter' value='sma_filter'> SMA Fast above Slow</label>
             </td>
             <td>
-                <label>SMA Fast <input type='text' name='sma_fast' value="50"> days</label><br>
-                <label>SMA Slow <input type='text' name='sma_slow' value="100"> days</label>
+                <label>SMA Fast <input type='text' name='sma_fast' value="25" size="5"> days</label><br>
+                <label>SMA Slow <input type='text' name='sma_slow' value="50" size="5"> days</label>
             </td>
         </tr>
         <tr>
@@ -123,7 +132,7 @@
                onmouseout="document.getElementById('place-holder-1').src='https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png';">
                 {{ symbol }}
                 <img src="https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png"
-                     id="place-holder-1" style="zindex: 100; position: relative;"  alt=""/>
+                     id="place-holder-1" style="zindex: 100; position: absolute;"  alt=""/>
             </a>
         </td>
         <td>
