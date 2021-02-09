@@ -315,6 +315,7 @@ def snapshot_wrapper():
 @app.route("/", methods=['GET', 'POST'])
 def index():
     stocks = {}
+    settings = ''
 
     # DEFAULTS
     active_filters = {'consolidating':
@@ -391,11 +392,12 @@ def index():
     return render_template("index.html",
                            stocks=stocks,
                            data_last_modified=last_modified_fmt,
-                           active_filters=active_filters)
+                           active_filters=active_filters,
+                           settings=settings)
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False)
 
 # stocks = {}
 #     if pattern:

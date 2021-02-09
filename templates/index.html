@@ -37,6 +37,15 @@
             text-align: center;
         }
 
+         input[type=text]{
+            border-top-style: hidden;
+            border-right-style: hidden;
+            border-left-style: hidden;
+            border-bottom-style: groove;
+            background-color: #eee;
+            width: 100px;
+        }
+
         .bullish {
             background: green;
             color: white;
@@ -100,6 +109,12 @@
         <tr>
             <td>
                 <label><input type='checkbox' name='filter' value='investor_reco'> Investor Reco (finviz.com). Takes a long time</label>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label><input disabled type='checkbox' name='settings' value='focus_stocks'></label>
+                <label> Focus stocks: <input type='text' name='focus_stocks' value='' style="width: 100px" placeholder="AAPL, AMD, NVDA, TQQQ .... coming soon!]" disabled></label>
             </td>
         </tr>
     </table>
