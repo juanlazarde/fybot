@@ -34,7 +34,7 @@ class S:
     signals_file = os.path.join(dataset_dir, signals_file)
 
     # other constants
-    download = 80
+    download = 180
 
 
 class Filter:
@@ -108,7 +108,51 @@ class Filter:
             # is coming out the squeeze
             return True
         return False
+    
+    @staticmethod
+    def in_the_squeeze(**kwargs):
+        df = kwargs['df']
+        sq = pd.DataFrame()
+        sq['20sma'] = df['Close'].rolling(window=20).mean()
+        sq['stddev'] = df['Close'].rolling(window=20).std()
+        sq['lower_band'] = sq['20sma'] - (2 * sq['stddev'])
+        sq['upper_band'] = sq['20sma'] + (2 * sq['stddev'])
+        sq['TR'] = abs(df['High'] - df['Low'])
+        sq['ATR'] = sq['TR'].rolling(window=20).mean()
+        sq['lower_keltner'] = sq['20sma'] - (sq['ATR'] * 1.5)
+        sq['upper_keltner'] = sq['20sma'] + (sq['ATR'] * 1.5)
 
+        def in_squeeze(_):
+            return _['lower_band'] > _['lower_keltner'] and \
+                   _['upper_band'] < _['upper_keltner']
+
+        sq['squeeze_on'] = sq.apply(in_squeeze, axis=1)
+
+        if sq.iloc[-1]['squeeze_on']:
+            # is coming out the squeeze
+            return True
+        return False
+
+    def ema_stacked(self, **kwargs):
+        df = kwargs['df']
+        ema = pd.DataFrame()
+        ema_list = [8,21,34,55,89]
+        for period in ema_list:
+            col = '{}{}'.format('ema', period)
+            ema[col] = talib.EMA(df['Close'], timeperiod=period)
+
+        if  (ema['ema8'].iloc[-1] > ema['ema21'].iloc[-1]) and \
+            (ema['ema21'].iloc[-1] > ema['ema34'].iloc[-1]) and \
+            (ema['ema34'].iloc[-1] > ema['ema55'].iloc[-1]) and \
+            (ema['ema55'].iloc[-1] > ema['ema89'].iloc[-1]) and \
+            (df['Close'].iloc[-1] > ema['ema21'].iloc[-1]):
+            return True
+        return False 
+
+
+
+
+    
     def candlestick(self, **kwargs):
         """Based on hackthemarket"""
         df = kwargs['df']
@@ -329,6 +373,9 @@ def index():
                       'ttm_squeeze':
                           {'go': False},
 
+                      'in_the_squeeze':
+                          {'go': False},
+
                       'candlestick':
                           {'go': True},
 
@@ -336,6 +383,9 @@ def index():
                           {'go': False,
                            'fast': 25,
                            'slow': 50},
+
+                      'ema_stacked':
+                          {'go': False},
 
                       'investor_reco':
                           {'go': False}
@@ -374,6 +424,9 @@ def index():
                           'ttm_squeeze':
                           {'go': fltr_me('ttm_squeeze')},
 
+                          'in_the_squeeze':
+                          {'go': fltr_me('in_the_squeeze')},
+
                           'candlestick':
                           {'go': fltr_me('candlestick')},
 
@@ -381,6 +434,9 @@ def index():
                           {'go': fltr_me('sma_filter'),
                            'fast': float(frm_get('sma_fast')),
                            'slow': float(frm_get('sma_slow'))},
+
+                          'ema_stacked':
+                          {'go': fltr_me('ema_stacked')},
 
                           'investor_reco':
                           {'go': fltr_me('investor_reco')}

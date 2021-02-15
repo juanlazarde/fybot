@@ -91,7 +91,17 @@
         </tr>
         <tr>
             <td>
-                <label><input type='checkbox' name='filter' value='ttm_squeeze' {% if active_filters['ttm_squeeze']['go'] == True %}checked{% endif %}> TTM Squeeze</label>
+                <label><input type='checkbox' name='filter' value='ttm_squeeze' {% if active_filters['ttm_squeeze']['go'] == True %}checked{% endif %}> TTM Squeeze (Coming out of Squeeze)</label>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label><input type='checkbox' name='filter' value='in_the_squeeze' {% if active_filters['in_the_squeeze']['go'] == True %}checked{% endif %}> TTM Squeeze (In the Squeeze)</label>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <label><input type='checkbox' name='filter' value='ema_stacked' {% if active_filters['ema_stacked']['go'] == True %}checked{% endif %}> EMA positively Stacked</label>
             </td>
         </tr>
         <tr>
