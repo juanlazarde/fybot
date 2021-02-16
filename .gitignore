@@ -5,4 +5,6 @@
 *.pyc
 /.idea
 /financial_scanner.bat
-/testing.py
+/update_stocks.py
+/app.db
+/config.py

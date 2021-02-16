@@ -3,7 +3,14 @@
 Downloads list of stocks, filters and analyzes, and provides results on HTML
 via Flask,
 
-To run flask, open the python terminal and run: flask run"""
+To run flask, open the python terminal and run: flask run
+
+
+-- Template format
+http://semantic-ui.com
+
+
+"""
 
 import datetime
 import json
@@ -104,55 +111,38 @@ class Filter:
 
         sq['squeeze_on'] = sq.apply(in_squeeze, axis=1)
 
+        if 'in_the_squeeze' in kwargs.keys():
+            if kwargs['in_the_squeeze']:
+                return sq
+
         if sq.iloc[-3]['squeeze_on'] and not sq.iloc[-1]['squeeze_on']:
             # is coming out the squeeze
             return True
         return False
-    
+
+    def in_the_squeeze(self, **kwargs):
+        # is in the squeeze
+        sq = self.ttm_squeeze(df=kwargs['df'], in_the_squeeze=True)
+        result = True if sq.iloc[-1]['squeeze_on'] else False
+        return result
+
     @staticmethod
-    def in_the_squeeze(**kwargs):
-        df = kwargs['df']
-        sq = pd.DataFrame()
-        sq['20sma'] = df['Close'].rolling(window=20).mean()
-        sq['stddev'] = df['Close'].rolling(window=20).std()
-        sq['lower_band'] = sq['20sma'] - (2 * sq['stddev'])
-        sq['upper_band'] = sq['20sma'] + (2 * sq['stddev'])
-        sq['TR'] = abs(df['High'] - df['Low'])
-        sq['ATR'] = sq['TR'].rolling(window=20).mean()
-        sq['lower_keltner'] = sq['20sma'] - (sq['ATR'] * 1.5)
-        sq['upper_keltner'] = sq['20sma'] + (sq['ATR'] * 1.5)
-
-        def in_squeeze(_):
-            return _['lower_band'] > _['lower_keltner'] and \
-                   _['upper_band'] < _['upper_keltner']
-
-        sq['squeeze_on'] = sq.apply(in_squeeze, axis=1)
-
-        if sq.iloc[-1]['squeeze_on']:
-            # is coming out the squeeze
-            return True
-        return False
-
-    def ema_stacked(self, **kwargs):
+    def ema_stacked(**kwargs):
         df = kwargs['df']
         ema = pd.DataFrame()
-        ema_list = [8,21,34,55,89]
+        ema_list = [8, 21, 34, 55, 89]
         for period in ema_list:
             col = '{}{}'.format('ema', period)
             ema[col] = talib.EMA(df['Close'], timeperiod=period)
 
-        if  (ema['ema8'].iloc[-1] > ema['ema21'].iloc[-1]) and \
-            (ema['ema21'].iloc[-1] > ema['ema34'].iloc[-1]) and \
-            (ema['ema34'].iloc[-1] > ema['ema55'].iloc[-1]) and \
-            (ema['ema55'].iloc[-1] > ema['ema89'].iloc[-1]) and \
-            (df['Close'].iloc[-1] > ema['ema21'].iloc[-1]):
+        if (ema['ema8'].iloc[-1] > ema['ema21'].iloc[-1]) and \
+           (ema['ema21'].iloc[-1] > ema['ema34'].iloc[-1]) and \
+           (ema['ema34'].iloc[-1] > ema['ema55'].iloc[-1]) and \
+           (ema['ema55'].iloc[-1] > ema['ema89'].iloc[-1]) and \
+           (df['Close'].iloc[-1] > ema['ema21'].iloc[-1]):
             return True
         return False 
 
-
-
-
-    
     def candlestick(self, **kwargs):
         """Based on hackthemarket"""
         df = kwargs['df']
@@ -191,20 +181,22 @@ class Filter:
     def investor_reco(self, **kwargs):
         # scrape finviz for latest 3 investor status
         symbol = kwargs['symbol']
+
+        # reco = yf.Ticker(symbol).recommendations['To Grade'][-3:]
+        # reco = ", ".join(reco)
+
         site = 'https://www.finviz.com/quote.ashx?t={}'.format(symbol)
         headers = {'User-Agent': 'Mozilla/5.0'}
         search = '//table[@class="fullview-ratings-outer"]//tr[1]//text()'
-
         screen = requests.get(site, headers=headers)
         tree = html.fromstring(screen.content).xpath(search)
-
         bull_words = ['Buy', 'Outperform', 'Overweight', 'Upgrade']
         bear_words = ['Sell', 'Underperform', 'Underweight', 'Downgrade']
         bull = sum([tree.count(x) for x in bull_words])
         bear = sum([tree.count(x) for x in bear_words])
+        reco = "Bull {}, Bear {}".format(bull, bear)
 
-        self.signal.loc[symbol, 'investor_sum'] = \
-            "Bull {}, Bear {}".format(bull, bear)
+        self.signal.loc[symbol, 'investor_sum'] = reco
         return True
 
 
@@ -349,6 +341,22 @@ class Index:
 app = Flask(__name__)
 
 
+@app.route("/stock/<symbol>")
+def stock_detail(symbol):
+    df = pd.read_csv(S.symbols_file, index_col='Symbol', usecols=[0, 1])
+    stocks = df.T.to_dict()
+    security = stocks[symbol]['Security']
+    data = pd.read_pickle(S.data_file)
+    bars_df = data[symbol]
+    bars = bars_df.to_dict('index')
+    stock = {'symbol': symbol,
+             'security': security,
+             'bars': bars}
+
+    return render_template("stock_detail.html",
+                           stock=stock)
+
+
 @app.route("/snapshot")
 def snapshot_wrapper():
     Snapshot()
@@ -364,7 +372,7 @@ def index():
     # DEFAULTS
     active_filters = {'consolidating':
                           {'go': True,
-                           'pct': 7},
+                           'pct': 6},
 
                       'breakout':
                           {'go': False,
@@ -393,7 +401,7 @@ def index():
 
     modified_time = os.stat(S.data_file).st_mtime
     last_modified = datetime.datetime.fromtimestamp(modified_time)
-    last_modified_fmt = last_modified.strftime('%d-%m-%Y %H:%M %p')
+    last_modified_fmt = last_modified.strftime('%m-%d-%Y %H:%M %p')
 
     if request.method == 'GET':
         if os.path.isfile(S.data_file):
@@ -453,7 +461,7 @@ def index():
 
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    app.run(debug=True)
 
 # stocks = {}
 #     if pattern:
@@ -534,6 +542,23 @@ if __name__ == "__main__":
 
 # # replace '.' with '-' a Yahoo Finance issue
 # symbols = [x.replace('.', '-') for x in symbols]
+
+# symbol = kwargs['symbol']
+#         site = 'https://www.finviz.com/quote.ashx?t={}'.format(symbol)
+#         headers = {'User-Agent': 'Mozilla/5.0'}
+#         search = '//table[@class="fullview-ratings-outer"]//tr[1]//text()'
+#
+#         screen = requests.get(site, headers=headers)
+#         tree = html.fromstring(screen.content).xpath(search)
+#
+#         bull_words = ['Buy', 'Outperform', 'Overweight', 'Upgrade']
+#         bear_words = ['Sell', 'Underperform', 'Underweight', 'Downgrade']
+#         bull = sum([tree.count(x) for x in bull_words])
+#         bear = sum([tree.count(x) for x in bear_words])
+#
+#         self.signal.loc[symbol, 'investor_sum'] = \
+#             "Bull {}, Bear {}".format(bull, bear)
+#         return True
 
 
 # Tables to html
