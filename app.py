@@ -348,6 +348,7 @@ def stock_detail(symbol):
     security = stocks[symbol]['Security']
     data = pd.read_pickle(S.data_file)
     bars_df = data[symbol]
+    bars_df = bars_df.reset_index()
     bars = bars_df.to_dict('index')
     stock = {'symbol': symbol,
              'security': security,

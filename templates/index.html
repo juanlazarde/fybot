@@ -1,6 +1,10 @@
 {% extends "layout.html" %}
 {% block content %}
-<h1>Technical Scanner</h1>
+<h1>
+    <div class="ui massive breadcrumb">
+        <div class="active section">Technical Scanner</div>
+    </div>
+</h1>
 <form action="#" method="GET">
     <input type="button" onclick="window.location.href='/snapshot';" value="Refresh Data"/>
     Last update: {{ data_last_modified }}
