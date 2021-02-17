@@ -120,10 +120,9 @@
             <td>
                 <a href="https://www.finviz.com/quote.ashx?t={{ symbol }}"
                    onmouseover="document.getElementById('img_{{ symbol }}').src='https://finviz.com/chart.ashx?t={{ symbol }}&ty=c&ta=1&p=d&s=l';"
-                   onmouseout="document.getElementById('img_{{ symbol }}').src='https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png';">
+                   onmouseout="document.getElementById('img_{{ symbol }}').src='';">
                     {{ symbol }}
-                    <img src="https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png"
-                         id="img_{{ symbol }}" style="z-index: 100; position: absolute;" alt=""/>
+                    <img src="" id="img_{{ symbol }}" style="z-index: 100; position: absolute;" alt=""/>
                 </a>
             </td>
             <td>
