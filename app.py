@@ -176,7 +176,7 @@ class Filter:
         sma_slow = talib.SMA(df['Close'],
                              timeperiod=self.settings['sma_filter']['slow'])
 
-        return True if sma_fast[-1] > sma_slow[-1] else False
+        return True if (sma_fast[-1] > sma_slow[-1]) and (sma_fast[-2] < sma_slow[-2]) else False
 
     def investor_reco(self, **kwargs):
         # scrape finviz for latest 3 investor status
