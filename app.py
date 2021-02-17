@@ -358,6 +358,13 @@ def stock_detail(symbol):
                            stock=stock)
 
 
+@app.route("/snapshot")
+def snapshot_wrapper():
+    Snapshot()
+    return "Success downloading data. " \
+           "<a href='http://localhost:5000'>Go Back</a>"
+
+
 @app.route("/", methods=['GET', 'POST'])
 def index():
     # DEFAULTS

@@ -6,10 +6,17 @@
     </div>
 </h1>
 <form action="#" method="GET">
-    <input type="button" onclick="window.location.href='/snapshot';" value="Refresh Data"/>
-    Last update: {{ data_last_modified }}
-    <br>
+{#    <input type="button" onclick="window.location.href='/snapshot';" value="Refresh Data"/>#}
+{#    Last update: {{ data_last_modified }}#}
+{#    <br>#}
+    <div class="ui labeled button" tabindex="0">
+      <div class="ui button">
+        <i class="download icon"></i> Refresh data
+      </div>
+      <a class="ui basic label">Last update: {{ data_last_modified }}</a>
+    </div>
 </form>
+<br>
 <form action="#" method="POST">
     <table>
         <tr>
@@ -89,7 +96,9 @@
             </td>
         </tr>
     </table>
-    <input type="submit" value="Apply">
+{#    <input type="submit" value="Apply">#}
+    <br>
+    <button class="ui button">Submit</button>
 </form>
 <table class="ui compact table">
     <thead>
