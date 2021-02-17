@@ -362,7 +362,8 @@ def stock_detail(symbol):
 def snapshot_wrapper():
     Snapshot()
     return "Success downloading data. " \
-           "<a href='http://localhost:5000'>Go Back</a>"
+           "<a href='#' onClick='history.go(-1);return true;'" \
+           "class='section'>Go Back</a>"
 
 
 @app.route("/", methods=['GET', 'POST'])
