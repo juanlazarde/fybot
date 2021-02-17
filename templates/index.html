@@ -21,7 +21,7 @@
     <table>
         <tr>
             <td>
-                <input id="consolidating" type="checkbox"  name="filter" value="'consolidating"
+                <input id="consolidating" type="checkbox"  name="filter" value="consolidating"
                        {% if active_filters['consolidating']['go'] == True %}checked{% endif %}>
                 <label for="consolidating"> Consolidating within </label>
                 <input id="consolidating_pct" type="number" name="consolidating_pct"
@@ -55,9 +55,11 @@
         </tr>
         <tr>
             <td>
-                <input id="ema_stacked" type="checkbox" name="filter" value="'ema_stacked"
+                <input id="ema_stacked" type="checkbox" name="filter" value="ema_stacked"
                        {% if active_filters['ema_stacked']['go'] == True %}checked{% endif %}>
-                <label for="ema_stacked"> EMA positively Stacked</label>
+                <label for="ema_stacked"> EMAs positively Stacked<br>
+                    &emsp;(bullish) signals all fast emas are higher than the slow ema in the latest period.
+                </label>
             </td>
         </tr>
         <tr>
@@ -71,14 +73,16 @@
             <td>
                 <input id="sma_filter" type="checkbox" name="filter" value="sma_filter"
                        {% if active_filters['sma_filter']['go'] == True %}checked{% endif %}>
-                <label for="sma_filter"> SMA crossover</label>
+                <label for="sma_filter"> SMA crossover:</label>
                 <label for="sma_fast"> Fast</label>
                 <input id="sma_fast" type="number" name="sma_fast"
                        value="{{ active_filters['sma_filter']['fast'] }}" min="0" step="1">
                 <label for="sma_slow"> & Slow </label>
                 <input id="sma_slow" type="number" name="sma_slow"
                        value="{{ active_filters['sma_filter']['slow'] }}" min="0" step="1">
-                <label> days</label>
+                <label> days. <br>
+                    &emsp;(bullish) signals fast sma crossing over higher than slow sma in the latest period.
+                </label>
             </td>
         </tr>
         <tr>
