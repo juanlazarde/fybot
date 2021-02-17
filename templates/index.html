@@ -14,113 +14,127 @@
     <table>
         <tr>
             <td>
-                <label><input type='checkbox' name='filter' value='consolidating'
-                              {% if active_filters['consolidating']['go'] == True %}checked{% endif %}>
-                    Consolidating</label>
-                <label> within <input type='number' name='consolidating_pct'
-                                      value="{{ active_filters['consolidating']['pct'] }}" min="0" step="0.5">%</label>
+                <input id="consolidating" type="checkbox"  name="filter" value="'consolidating"
+                       {% if active_filters['consolidating']['go'] == True %}checked{% endif %}>
+                <label for="consolidating"> Consolidating within </label>
+                <input id="consolidating_pct" type="number" name="consolidating_pct"
+                       value="{{ active_filters['consolidating']['pct'] }}" min="0" step="0.5">
+                <label for="consolidating_pct">%</label>
             </td>
         </tr>
         <tr>
             <td>
-                <label><input type='checkbox' name='filter' value='breakout'
-                              {% if active_filters['breakout']['go'] == True %}checked{% endif %}> Breakout</label>
-                <label> over <input type='number' name='breakout_pct' value="{{ active_filters['breakout']['pct'] }}"
-                                    min="0" step="0.5">%</label>
+                <input id="breakout" type='checkbox' name='filter' value='breakout'
+                       {% if active_filters['breakout']['go'] == True %}checked{% endif %}>
+                <label for="breakout"> Breakout over </label>
+                <input id="breakout_pct" type="number" name="breakout_pct"
+                       value="{{ active_filters['breakout']['pct'] }}" min="0" step="0.5">
+                <label for="breakout_pct"> %</label>
             </td>
         </tr>
         <tr>
             <td>
-                <label><input type='checkbox' name='filter' value='ttm_squeeze'
-                              {% if active_filters['ttm_squeeze']['go'] == True %}checked{% endif %}> TTM Squeeze
-                    (Coming out of Squeeze)</label>
+                <input id="ttm_squeeze" type="checkbox" name="filter" value="ttm_squeeze"
+                       {% if active_filters['ttm_squeeze']['go'] == True %}checked{% endif %}>
+                <label for="ttm_squeeze"> TTM Squeeze (Coming out of Squeeze)</label>
             </td>
         </tr>
         <tr>
             <td>
-                <label><input type='checkbox' name='filter' value='in_the_squeeze'
-                              {% if active_filters['in_the_squeeze']['go'] == True %}checked{% endif %}> TTM Squeeze (In
-                    the Squeeze)</label>
+                <input id="in_the_squeeze" type="checkbox" name="filter" value="in_the_squeeze"
+                       {% if active_filters['in_the_squeeze']['go'] == True %}checked{% endif %}>
+                <label for="in_the_squeeze"> TTM Squeeze (In the Squeeze)</label>
             </td>
         </tr>
         <tr>
             <td>
-                <label><input type='checkbox' name='filter' value='ema_stacked'
-                              {% if active_filters['ema_stacked']['go'] == True %}checked{% endif %}> EMA positively
-                    Stacked</label>
+                <input id="ema_stacked" type="checkbox" name="filter" value="'ema_stacked"
+                       {% if active_filters['ema_stacked']['go'] == True %}checked{% endif %}>
+                <label for="ema_stacked"> EMA positively Stacked</label>
             </td>
         </tr>
         <tr>
             <td>
-                <label><input type='checkbox' name='filter' value='candlestick'
-                              {% if active_filters['candlestick']['go'] == True %}checked{% endif %}>
-                    Candlestick</label>
+                <input id="candlestick" type="checkbox" name="filter" value="candlestick"
+                       {% if active_filters['candlestick']['go'] == True %}checked{% endif %}>
+                <label for="candlestick"> Candlestick</label>
             </td>
         </tr>
         <tr>
             <td>
-                <label><input type='checkbox' name='filter' value='sma_filter'
-                              {% if active_filters['sma_filter']['go'] == True %}checked{% endif %}> SMA
-                    crossover</label>
-                <label> Fast <input type='number' name='sma_fast' value="{{ active_filters['sma_filter']['fast'] }}"
-                                    min="0" step="5"> & </label>
-                <label>Slow <input type='number' name='sma_slow' value="{{ active_filters['sma_filter']['slow'] }}"
-                                   min="0" step="5"> days</label>
+                <input id="sma_filter" type="checkbox" name="filter" value="sma_filter"
+                       {% if active_filters['sma_filter']['go'] == True %}checked{% endif %}>
+                <label for="sma_filter"> SMA crossover</label>
+                <label for="sma_fast"> Fast</label>
+                <input id="sma_fast" type="number" name="sma_fast"
+                       value="{{ active_filters['sma_filter']['fast'] }}" min="0" step="1">
+                <label for="sma_slow"> & Slow </label>
+                <input id="sma_slow" type="number" name="sma_slow"
+                       value="{{ active_filters['sma_filter']['slow'] }}" min="0" step="1">
+                <label> days</label>
             </td>
         </tr>
         <tr>
             <td>
-                <label><input type='checkbox' name='filter' value='investor_reco'> Investor Reco (finviz.com). Takes a
-                    long time</label>
+                <input id="investor_reco" type="checkbox" name="filter" value="investor_reco">
+                <label for="investor_reco">Investor Reco (finviz.com). Takes a long time</label>
             </td>
         </tr>
         <tr>
             <td>
-                <label><input disabled type='checkbox' name='settings' value='focus_stocks'></label>
-                <label> Focus stocks: <input type='text' name='focus_stocks' value='' style="width: 100px"
-                                             placeholder="AAPL, AMD, NVDA, TQQQ .... coming soon!]" disabled></label>
+                <input id="focus_stocks" disabled type="checkbox" name="settings" value="focus_stocks">
+                <label for="focus_stocks"> Focus stocks: </label>
+                <input id="focus_stocks" type="text" name="focus_stocks" value="" style="width: 400px"
+                       placeholder="AAPL, AMD, NVDA, TQQQ .... coming soon!" disabled>
             </td>
         </tr>
     </table>
-    <input type="submit" value="Refresh Filters">
+    <input type="submit" value="Apply">
 </form>
 <table class="ui compact table">
     <thead>
-    <tr>
-        <th>Symbol</th>
-        <th>Company</th>
-        <th>Bull Candle Signal</th>
-        <th>Bear Candle Signal</th>
-        <th>Investor's Reco</th>
-    </tr>
+        <tr>
+            <th>Symbol</th>
+            <th>Company</th>
+            {% if active_filters['candlestick']['go'] == True %}
+            <th>Bull Candle Signal</th>
+            <th>Bear Candle Signal</th>
+            {% endif %}
+            {% if active_filters['investor_reco']['go'] == True %}
+            <th>Investor's Reco</th>
+            {% endif %}
+        </tr>
     </thead>
     <tbody>
     {% for symbol in stocks %}
-    <tr>
-        <td>
-            <a href="https://www.finviz.com/quote.ashx?t={{ symbol }}"
-               onmouseover="document.getElementById('place-holder-1').src='https://finviz.com/chart.ashx?t={{ symbol }}&ty=c&ta=1&p=d&s=l';"
-               onmouseout="document.getElementById('place-holder-1').src='https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png';">
-                {{ symbol }}
-                <img src="https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png"
-                     id="place-holder-1" style="zindex: 100; position: absolute;" alt=""/>
-            </a>
-        </td>
-        <td>
-            <a href="/stock/{{ symbol }}">{{ stocks[symbol]['Security'] }}</a>
-        </td>
-        {% autoescape false %}
-        <td class="bullish">
-            {{ stocks[symbol]['cdl_sum_bul']  | replace(", ", "<br/>") }}
-        </td>
-        <td class="bearish">
-            {{ stocks[symbol]['cdl_sum_ber']  | replace(", ", "<br/>") }}
-        </td>
-        <td class="investor_sum">
-            {{ stocks[symbol]['investor_sum'] }}
-        </td>
-        {% endautoescape %}
-        {% endfor %}
+        <tr>
+            <td>
+                <a href="https://www.finviz.com/quote.ashx?t={{ symbol }}"
+                   onmouseover="document.getElementById('img_{{ symbol }}').src='https://finviz.com/chart.ashx?t={{ symbol }}&ty=c&ta=1&p=d&s=l';"
+                   onmouseout="document.getElementById('img_{{ symbol }}').src='https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png';">
+                    {{ symbol }}
+                    <img src="https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png"
+                         id="img_{{ symbol }}" style="z-index: 100; position: absolute;" alt=""/>
+                </a>
+            </td>
+            <td>
+                <a href="/stock/{{ symbol }}">{{ stocks[symbol]['Security'] }}</a>
+            </td>
+            {% autoescape false %}
+            {% if active_filters['candlestick']['go'] == True %}
+            <td {% if stocks[symbol]['cdl_sum_bul'] != "" %}class="bullish"{% endif %}>
+                {{ stocks[symbol]['cdl_sum_bul']  | replace(", ", "<br/>") }}
+            </td>
+            <td {% if stocks[symbol]['cdl_sum_ber'] != "" %}class="bearish"{% endif %}>
+                {{ stocks[symbol]['cdl_sum_ber']  | replace(", ", "<br/>") }}
+            </td>
+            {% endif %}
+            {% if active_filters['investor_reco']['go'] == True %}
+            <td class="investor_sum">{{ stocks[symbol]['investor_sum'] }}</td>
+            {% endif %}
+            {% endautoescape %}
+        </tr>
+    {% endfor %}
     </tbody>
 </table>
 {% endblock %}

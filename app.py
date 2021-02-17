@@ -41,7 +41,7 @@ class S:
     signals_file = os.path.join(dataset_dir, signals_file)
 
     # other constants
-    download = 180
+    download = 200
 
 
 class Filter:
@@ -358,18 +358,8 @@ def stock_detail(symbol):
                            stock=stock)
 
 
-@app.route("/snapshot")
-def snapshot_wrapper():
-    Snapshot()
-    return "Success downloading data. " \
-           "<a href='http://localhost:5000'>Go Back</a>"
-
-
 @app.route("/", methods=['GET', 'POST'])
 def index():
-    stocks = {}
-    settings = ''
-
     # DEFAULTS
     active_filters = {'consolidating':
                           {'go': True,
@@ -400,6 +390,9 @@ def index():
                           {'go': False}
                       }
 
+    stocks = {}
+    settings = ''
+
     modified_time = os.stat(S.data_file).st_mtime
     last_modified = datetime.datetime.fromtimestamp(modified_time)
     last_modified_fmt = last_modified.strftime('%m-%d-%Y %H:%M %p')
@@ -416,7 +409,7 @@ def index():
         filters_selected = request.form.getlist('filter')
         if len(filters_selected) == 0:
             return "Please go back and make a selection. " \
-                   "<a href='http://localhost:5000'>Go Back</a>"
+                   "<a href='/'>Go Back</a>"
 
         # shorten functions
         def fltr_me(x): return x in filters_selected

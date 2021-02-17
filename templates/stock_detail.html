@@ -2,7 +2,7 @@
 {% block content %}
 <h1>
     <div class="ui massive breadcrumb">
-        <a href="/" class="section">Technical Scanner</a>
+        <a href="#" onClick="history.go(-1);return true;" class="section">Technical Scanner</a>
         <i class="angle double right icon"></i>
         <div class="active section">{{ stock.security }} ({{ stock.symbol }})</div>
     </div>
