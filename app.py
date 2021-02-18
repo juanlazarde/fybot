@@ -141,7 +141,7 @@ class Filter:
            (ema['ema55'].iloc[-1] > ema['ema89'].iloc[-1]) and \
            (df['Close'].iloc[-1] > ema['ema21'].iloc[-1]):
             return True
-        return False 
+        return False
 
     def candlestick(self, **kwargs):
         """Based on hackthemarket"""
@@ -178,6 +178,21 @@ class Filter:
 
         result = ((sma_fast[-1] > sma_slow[-1]) and
                   (sma_fast[-2] < sma_slow[-2]))
+        return True if result else False
+
+    def macd_filter(self, **kwargs):
+        df = kwargs['df']
+        macd, macdsignal, macdhist = talib.MACD(df['Close'], fastperiod=12, slowperiod=26, signalperiod=9)
+        macd_cross = (macd - macdsignal) > 0
+        macd_bull_signal = macd_cross > macd_cross.shift(periods=1)
+        macd_bear_signal = macd_cross < macd_cross.shift(periods=1)
+        result = macd_bull_signal[-5:].max() > 0 #check for cross in last 5 periods
+        return True if result else False
+    
+    def rsi_filter(self, **kwargs):  
+        df = kwargs['df']
+        rsi = talib.RSI(df['Close'], timeperiod=14)
+        result = rsi[-1] < 30
         return True if result else False
 
     def investor_reco(self, **kwargs):
@@ -396,6 +411,12 @@ def index():
                       'ema_stacked':
                           {'go': False},
 
+                      'macd_filter':
+                          {'go': False},
+
+                      'rsi_filter':
+                          {'go': False},
+
                       'investor_reco':
                           {'go': False}
                       }
@@ -449,6 +470,12 @@ def index():
 
                           'ema_stacked':
                           {'go': fltr_me('ema_stacked')},
+
+                          'macd_filter':
+                          {'go': fltr_me('macd_filter')},
+
+                          'rsi_filter':
+                          {'go': fltr_me('rsi_filter')},
 
                           'investor_reco':
                           {'go': fltr_me('investor_reco')}

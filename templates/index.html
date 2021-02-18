@@ -87,6 +87,25 @@
         </tr>
         <tr>
             <td>
+                <input id="macd_filter" type="checkbox" name="filter" value="macd_filter"
+                    {% if active_filters['macd_filter']['go'] == True %}checked{% endif %}>
+                <label for="macd_filter"> MACD Crossover 12|26 in last 5 periods</label>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <input id="rsi_filter" type="checkbox" name="filter" value="rsi_filter"
+                       {% if active_filters['rsi_filter']['go'] == True %}checked{% endif %}>
+                <label for="rsi_filter"> RSI < 30 (oversold)</label>
+                <input id="rsi_filter" type="checkbox" name="filter" value="rsi_filter"
+                {% if active_filters['rsi_filter']['go'] == True %}checked{% endif %}>
+                <label for="rsi_filter"> RSI > 70 (overbought) NOT WORKING <br>
+                    &emsp; Oversold region can signal a bullish reversal. Overbought a bearish reversal.
+                </label>
+            </td>
+        </tr>
+        <tr>
+            <td>
                 <input id="investor_reco" type="checkbox" name="filter" value="investor_reco">
                 <label for="investor_reco">Investor Reco (finviz.com). Takes a long time</label>
             </td>
