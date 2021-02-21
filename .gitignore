@@ -2,9 +2,11 @@
 /datasets/
 /.vscode/
 /venv/
+.venv
 *.pyc
 /.idea
 /financial_scanner.bat
 /update_stocks.py
 /app.db
 /config.py
+/source
