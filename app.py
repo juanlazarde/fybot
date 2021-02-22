@@ -49,7 +49,7 @@ class Filter:
         self.settings = active_filter
         # Read data and optimize
         df = pd.read_pickle(S.data_file)
-        df = df.drop(['Volume', 'Adj Close'], axis=1, level=1)
+        df = df.drop(['Adj Close'], axis=1, level=1)
 
         # Extract symbols in data
         self.symbols = list(df.columns.levels[0])
@@ -216,6 +216,26 @@ class Filter:
         self.signal.loc[symbol, 'investor_sum'] = reco
         return True
 
+    def temp_view(self, **kwargs):
+        df = kwargs['df']
+        # get parameters for a trade
+        symbol = kwargs['symbol']
+
+        atr = talib.ATR(df['High'], df['Low'], df['Close'], timeperiod=20)
+        price_target = df['Close'] + atr * 2
+        p5d_mean = df['Volume'].rolling(window=5).mean()
+        p30d_mean = df['Volume'].rolling(window=30).mean()
+        vol_index = p5d_mean *100 / p30d_mean
+
+        reco = "Close is {:10.2f} and Target is {:10.2f} <br> \
+                p5d vs p30d Vol is a {:10.1f} index <br> \
+                {}, we like the stock.".format(df['Close'][-1], 
+                                               price_target[-1],
+                                               vol_index[-1], 
+                                               symbol)
+
+        self.signal.loc[symbol, 'temp_sum'] = reco
+        return True
 
 class Chart:
     """Chart library"""
@@ -351,6 +371,10 @@ class Index:
             for symbol, row in self.signals.iterrows():
                 stocks[symbol]['investor_sum'] = row.investor_sum
 
+        if self.settings['temp_view']['go']:
+            for symbol, row in self.signals.iterrows():
+                stocks[symbol]['temp_sum'] = row.temp_sum
+                
         self.stocks = stocks
 
 
@@ -418,7 +442,10 @@ def index():
                           {'go': False},
 
                       'investor_reco':
-                          {'go': False}
+                          {'go': False},
+
+                      'temp_view':
+                          {'go': False}                   
                       }
 
     stocks = {}
@@ -478,7 +505,10 @@ def index():
                           {'go': fltr_me('rsi_filter')},
 
                           'investor_reco':
-                          {'go': fltr_me('investor_reco')}
+                          {'go': fltr_me('investor_reco')},
+
+                          'temp_view':
+                          {'go': fltr_me('temp_view')}
                           }
 
         Filter(active_filters)

@@ -112,6 +112,13 @@
         </tr>
         <tr>
             <td>
+                <input id="temp_view" type="checkbox" name="filter" value="temp_view"
+                    {% if active_filters['temp_view']['go'] == True %}checked{% endif %}>
+                <label for="temp_view">Temporary Experimental View for Symbol Info</label>
+            </td>
+        </tr>
+        <tr>
+            <td>
                 <input id="focus_stocks" disabled type="checkbox" name="settings" value="focus_stocks">
                 <label for="focus_stocks"> Focus stocks: </label>
                 <input id="focus_stocks" type="text" name="focus_stocks" value="" style="width: 400px"
@@ -134,6 +141,9 @@
             {% endif %}
             {% if active_filters['investor_reco']['go'] == True %}
             <th>Investor's Reco</th>
+            {% endif %}
+            {% if active_filters['temp_view']['go'] == True %}
+            <th>Temp</th>
             {% endif %}
         </tr>
     </thead>
@@ -162,6 +172,9 @@
             {% endif %}
             {% if active_filters['investor_reco']['go'] == True %}
             <td class="investor_sum">{{ stocks[symbol]['investor_sum'] }}</td>
+            {% endif %}
+            {% if active_filters['temp_view']['go'] == True %}
+            <td class="temp_view">{{ stocks[symbol]['temp_sum'] }}</td>
             {% endif %}
             {% endautoescape %}
         </tr>
