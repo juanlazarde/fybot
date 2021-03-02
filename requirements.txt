@@ -9,3 +9,4 @@ lxml>=4.6.2
 tda-api
 asyncio
 time
+pandas_ta

@@ -39,7 +39,7 @@ def app():
         col1, col2, col3 = st.beta_columns([1,1,1])
         with col1:
             st.subheader('Bullish')
-            checkbox_a1 = st.checkbox('checkbox 1', value=False, key='scanner')
+            checkbox_a1 = st.checkbox('Stacked EMAs', value=False, key='scanner')
             checkbox_a2 = st.checkbox('checkbox 2', value=False, key='scanner') 
             checkbox_a3 = st.checkbox('checkbox 3', value=False, key='scanner') 
             checkbox_a4 = st.checkbox('checkbox 4', value=False, key='scanner') 
@@ -72,9 +72,42 @@ def app():
     st.write('df is loaded from pickle and resides in cache making filtering fast')
     st.write(df.head())
     
-    st.subheader('Results')
-    st.write('this does not filter yet and returns all stocks. Functions need to be reefactored')
-    scan_results = df.columns.get_level_values(0).unique().sort_values().to_list()
+    def ema_multiple_periods(df ,ema_list = [8, 21, 34, 55, 89]):
+        #initializes an empty data frame with empty multi-index columns
+        multi_index_cols = pd.MultiIndex.from_product([[],[]])
+        ema = pd.DataFrame(index=df.index,columns=multi_index_cols)
+        
+        for period in ema_list:
+            col = '{}{}'.format('ema', period)
+            ema = ema.join(df.apply(lambda c: talib.EMA(c.values, period)).rename(columns={'Close': col}))
+        return ema
+        
+    def ema_stacked(ema, s):
+        if  ema[-1:][s].ema8[0] > ema[-1:][s].ema21[0] and \
+            ema[-1:][s].ema21[0] > ema[-1:][s].ema34[0] and \
+            ema[-1:][s].ema34[0] > ema[-1:][s].ema55[0] and \
+            ema[-1:][s].ema55[0] > ema[-1:][s].ema89[0]:
+            return True
+                   
+
     
-    for stock in scan_results:
-        st.write(stock)
+    with st.beta_container():
+        if checkbox_a1:
+            st.subheader('Dataframe filtered')
+            st.write('emas are stacked')
+            
+            df1 = df.xs('Close', axis=1, level=1, drop_level=False)
+            ema_df = ema_multiple_periods(df1 ,ema_list = [8, 21, 34, 55, 89])
+        
+            for s in ema_df.columns.get_level_values(0).unique():
+                if ema_stacked(ema_df, s):
+                    st.write(s)
+        else:
+            st.subheader('Results')
+            st.write('this does not filter yet and returns all stocks. Functions need to be reefactored')
+            scan_results = df.columns.get_level_values(0).unique().sort_values().to_list()
+            
+            for stock in scan_results:
+                st.write(stock)
+        
+        
