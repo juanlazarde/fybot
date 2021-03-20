@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Fundamental  -->
+    <meta charset="UTF-8">
+    <title>Financial Scanner</title>
+    <meta name="description" content>
+    <meta name="author" content>
+    <!-- Mobile needs  -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Fonts  -->
+    <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+    <!-- CSS  -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+{#    <link rel="stylesheet" href="http://getskeleton.com/dist/css/normalize.css">#}
+{#    <link rel="stylesheet" href="http://getskeleton.com/dist/css/skeleton.css">#}
+{#    <link rel="stylesheet" crossorigin="anonymous" href="http://gc.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cDovL2dldHNrZWxldG9uLmNvbS8">#}
+{#    <script src="https://google-code-prettify.googlecode.com/svn/loader/run_prettify.js"></script>#}
+    <style>
+        body {
+            font-family: "Raleway", "HelveticaNeue", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: small;
+            margin: 20px;
+        }
+
+        td {
+            padding: 5px;
+            font-size: small;
+        }
+
+        input[type=number]{
+            border-top-style: hidden;
+            border-right-style: hidden;
+            border-left-style: hidden;
+            border-bottom-style: groove;
+            background-color: #eee;
+            width: 40px;
+            text-align: center;
+        }
+
+         input[type=text]{
+            border-top-style: hidden;
+            border-right-style: hidden;
+            border-left-style: hidden;
+            border-bottom-style: groove;
+            background-color: #eee;
+            width: 100px;
+        }
+
+        .bullish {
+            background: green;
+            color: white;
+        }
+
+        .bearish {
+            background: red;
+            color: white;
+        }
+
+        .consolidating {
+            background: green;
+            color: white;
+        }
+
+        .breakout {
+            background: green;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="ui container">
+        <h1>Technical Scanner</h1>
+        <form action="#" method="GET">
+            <input type="button" onclick="window.location.href='/snapshot';" value="Refresh Data"/>
+             Last update: {{ data_last_modified }}
+        {#    <button onClick="window.location.reload();">Refresh Page</button>#}
+            <br>
+        </form>
+        <form action="#" method="POST">
+            <table >
+                <tr>
+                    <td>
+                        <label><input type='checkbox' name='filter' value='consolidating' {% if active_filters['consolidating']['go'] == True %}checked{% endif %}> Consolidating</label>
+                        <label> within <input type='number' name='consolidating_pct' value="{{ active_filters['consolidating']['pct'] }}" min="0" step="0.5">%</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label><input type='checkbox' name='filter' value='breakout' {% if active_filters['breakout']['go'] == True %}checked{% endif %}> Breakout</label>
+                        <label> over <input type='number' name='breakout_pct' value="{{ active_filters['breakout']['pct'] }}" min="0" step="0.5">%</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label><input type='checkbox' name='filter' value='ttm_squeeze' {% if active_filters['ttm_squeeze']['go'] == True %}checked{% endif %}> TTM Squeeze (Coming out of Squeeze)</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label><input type='checkbox' name='filter' value='in_the_squeeze' {% if active_filters['in_the_squeeze']['go'] == True %}checked{% endif %}> TTM Squeeze (In the Squeeze)</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label><input type='checkbox' name='filter' value='ema_stacked' {% if active_filters['ema_stacked']['go'] == True %}checked{% endif %}> EMA positively Stacked</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label><input type='checkbox' name='filter' value='candlestick' {% if active_filters['candlestick']['go'] == True %}checked{% endif %}> Candlestick</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label><input type='checkbox' name='filter' value='sma_filter' {% if active_filters['sma_filter']['go'] == True %}checked{% endif %}> SMA crossover</label>
+                        <label> Fast <input type='number' name='sma_fast' value="{{ active_filters['sma_filter']['fast'] }}" min="0" step="5"> & </label>
+                        <label>Slow <input type='number' name='sma_slow' value="{{ active_filters['sma_filter']['slow'] }}" min="0" step="5"> days</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label><input type='checkbox' name='filter' value='investor_reco'> Investor Reco (finviz.com). Takes a long time</label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label><input disabled type='checkbox' name='settings' value='focus_stocks'></label>
+                        <label> Focus stocks: <input type='text' name='focus_stocks' value='' style="width: 100px" placeholder="AAPL, AMD, NVDA, TQQQ .... coming soon!]" disabled></label>
+                    </td>
+                </tr>
+            </table>
+            <input type="submit" value="Refresh Filters">
+        </form>
+        {#<form>#}
+        {#    <label>#}
+        {#        <select name="pattern">#}
+        {#            <option value="">-- Select a Pattern --</option>#}
+        {#            {% for key in candlestick_patterns %}#}
+        {#                <option value="{{ key }}"#}
+        {#                        {% if pattern == key %}selected="selected"{% endif %}>{{ candlestick_patterns[key] }}</option>#}
+        {#            {% endfor %}#}
+        {#        </select>#}
+        {#    </label>#}
+        {#    <input type="submit" value="Scan"/>#}
+        {#</form>#}
+
+        <table class="ui compact table">
+            <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Company</th>
+                <th>Bull Candle Signal</th>
+                <th>Bear Candle Signal</th>
+                <th>Investor's Reco</th>
+            </tr>
+            </thead>
+            <tbody>
+                {% for symbol in stocks %}
+                <tr>
+                    <td>
+                        <a href="https://www.finviz.com/quote.ashx?t={{ symbol }}"
+                           onmouseover="document.getElementById('place-holder-1').src='https://finviz.com/chart.ashx?t={{ symbol }}&ty=c&ta=1&p=d&s=l';"
+                           onmouseout="document.getElementById('place-holder-1').src='https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png';">
+                            {{ symbol }}
+                            <img src="https://linkpeek.com/theme/img/linkpeek-transparent-pixel-placeholder.png"
+                                 id="place-holder-1" style="zindex: 100; position: absolute;"  alt=""/>
+                        </a>
+                    </td>
+                    <td>
+                        <a href="/stock/{{ symbol }}">{{ stocks[symbol]['Security'] }}</a>
+                    </td>
+                    {% autoescape false %}
+                    <td class="bullish">
+                        {{ stocks[symbol]['cdl_sum_bul']  | replace(", ", "<br/>") }}
+                    </td>
+                    <td class="bearish">
+                        {{ stocks[symbol]['cdl_sum_ber']  | replace(", ", "<br/>") }}
+                    </td>
+                    <td class="investor_sum">
+                        {{ stocks[symbol]['investor_sum'] }}
+                    </td>
+                    {% endautoescape %}
+
+                    {#            <tr>#}
+                    {#                <td colspan="3">#}
+                    {#                    <img src="https://finviz.com/chart.ashx?t={{ symbol }}&ty=c&ta=1&p=d&s=l" width="75%"/>#}
+                    {#                </td>#}
+                    {#            </tr>#}
+                    <!-- <tr>
+                        <td colspan="3">
+                            <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+                            <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+                            <div class="chart" id="candlestick{{ symbol }}">
+                                <script>
+                                    var graphs = {{ stocks[symbol]['chart'] | safe }};
+                                    Plotly.plot('candlestick{{ symbol }}', graphs, {});
+                                </script>
+                            </div>
+                        </td>
+                    </tr> -->
+                    {% endfor %}
+            </tbody>
+        </table>
+
+        {#{% for table in tables %}#}
+        {#            {{titles[loop.index]}}#}
+        {#            {{ table|safe }}#}
+        {#{% endfor %}#}
+    </div>
+</body>
+</html>
