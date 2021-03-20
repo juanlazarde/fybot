@@ -8,3 +8,5 @@
 *tmp_*
 /excluded_resources/
 /venv/Lib/site-packages/~kg_resources/
+/venv/Lib/site-packages/~kg_resources/_vendor/
+/venv/Lib/site-packages/~kg_resources/extern/
