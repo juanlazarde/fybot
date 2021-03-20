@@ -10,3 +10,5 @@
 /app.db
 /config.py
 /source
+.DS_Store
+*.ipynb

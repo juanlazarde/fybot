@@ -311,3 +311,93 @@ def load_create_options_table(s, max_strike_date, c):
     options_table = pd.concat(strike_one, axis=1)
     options_table = options_table.T
     return options_table
+
+
+import talib
+import pandas as pd
+
+def atr_apply_fun(x, timeperiod=20):
+    return talib.ATR(x[x.name]['High'], x[x.name]['Low'], x[x.name]['Close'], timeperiod)
+
+def sma_apply_fun(x, timeperiod=20):
+    return talib.SMA(x[x.name]['Close'], timeperiod)
+    
+def ema_apply_fun(x, timeperiod=20):
+    return talib.EMA(x[x.name]['Close'], timeperiod)
+
+def rsi_apply_fun(x, timeperiod=14):
+    return talib.RSI(x[x.name]['Close'], timeperiod)
+
+def cci_apply_fun(x, timeperiod=14):
+    return talib.CCI(x[x.name]['High'], x[x.name]['Low'], x[x.name]['Close'], timeperiod)
+
+def macd_apply_fun(x, fastperiod=12, slowperiod=26, signalperiod=9):
+    macd, macdsignal, macdhist = talib.MACD(x[x.name]['Close'], fastperiod, slowperiod, signalperiod)
+    return macd
+
+def macdsignal_apply_fun(x, fastperiod=12, slowperiod=26, signalperiod=9):
+    macd, macdsignal, macdhist = talib.MACD(x[x.name]['Close'], fastperiod, slowperiod, signalperiod)
+    return macdsignal
+
+def macdhist_apply_fun(x, fastperiod=12, slowperiod=26, signalperiod=9):
+    macd, macdsignal, macdhist = talib.MACD(x[x.name]['Close'], fastperiod, slowperiod, signalperiod)
+    return macdhist
+
+def bband_upper_apply_fun(x, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0):
+    upperband, middleband, lowerband = talib.BBANDS(x[x.name]['Close'], timeperiod, nbdevup, nbdevdn, matype)
+    return upperband
+
+def bband_lower_apply_fun(x, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0):
+    upperband, middleband, lowerband = talib.BBANDS(x[x.name]['Close'], timeperiod, nbdevup, nbdevdn, matype)
+    return lowerband
+
+def bband_middle_apply_fun(x, timeperiod=20, nbdevup=2, nbdevdn=2, matype=0):
+    upperband, middleband, lowerband = talib.BBANDS(x[x.name]['Close'], timeperiod, nbdevup, nbdevdn, matype)
+    return middleband
+
+def check_rule_ema_stacked(indicators_dict):
+    ema_periods = sorted([int(k.replace('ema','')) for k in indicators_dict.keys() if 'ema' in k])
+    
+    df = 1 #initialize a df as True
+    for i in range((len(ema_periods)-1)):
+        k1 = '{}{}'.format('ema',ema_periods[i])
+        k2 = '{}{}'.format('ema',ema_periods[i+1])
+        df1 = indicators_dict[k1] > indicators_dict[k2]
+        df = df*(df1.astype(int))
+    return df.astype(bool)
+
+def check_rule_sma_crossover(indicators_dict, fast=25, slow=50, bull=True):
+    k_fast = '{}{}'.format('sma', fast)
+    k_slow = '{}{}'.format('sma', slow)
+    if bull:
+        df1 = indicators_dict[k_fast] > indicators_dict[k_slow]
+        df2 = indicators_dict[k_fast].shift(1) < indicators_dict[k_slow].shift(1)
+    else:
+        df1 = ~(indicators_dict[k_fast] > indicators_dict[k_slow])
+        df2 = ~(indicators_dict[k_fast].shift(1) < indicators_dict[k_slow].shift(1))
+    return df1.astype(int).mul(df2.astype(int),axis=1).astype(bool)
+
+def check_rule_in_squeeze(indicators_dict):
+    df1 = (indicators_dict['bband_lower'] > indicators_dict['lower_keltner'])
+    df2 = (indicators_dict['bband_upper'] < indicators_dict['upper_keltner'])
+    df =  df1.astype(int).mul(df2.astype(int), axis=0)
+    return df.astype(bool)
+
+def check_rule_coming_out_squeeze(squeeze_df):
+    df1 = (indicators_dict['bband_lower'] > indicators_dict['lower_keltner'])
+    df2 = (indicators_dict['bband_upper'] < indicators_dict['upper_keltner'])
+    return df1.astype(int).mul(df2.astype(int), axis=0).astype(bool)
+
+def check_rule_rsi(indicators_dict, bull = True):
+    overbought = indicators_dict['rsi'] > 70
+    oversold = indicators_dict['rsi'] < 30
+    return oversold if bull else overbought
+
+def check_rule_macd_crossover(indicators_dict, bull=True):
+    if bull:
+        df1 = indicators_dict['macd'] > indicators_dict['macdsignal']
+        df2 = indicators_dict['macd'].shift(1) < indicators_dict['macdsignal'].shift(1)
+    else:
+        df1 = ~(indicators_dict['macd'] > indicators_dict['macdsignal'])
+        df2 = ~(indicators_dict['macd'].shift(1) < indicators_dict['macdsignal'].shift(1))
+    return df1.astype(int).mul(df2.astype(int),axis=1).astype(bool)

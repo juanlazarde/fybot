@@ -1,10 +1,8 @@
 # app.py
 import streamlit as st
-import pandas as pd
+import st_app01_home, st_app02, st_app03_sniper
 
 st.set_page_config(layout="wide")
-
-import st_app01_home, st_app02, st_app03_sniper
 
 PAGES = {
     "Home": st_app01_home,
