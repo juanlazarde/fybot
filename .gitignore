@@ -7,3 +7,4 @@
 *.log
 *tmp_*
 /excluded_resources/
+/venv/Lib/site-packages/~kg_resources/
