@@ -1,0 +1,9 @@
+/datasets/
+/.vscode/
+/venv/
+*.pyc
+/.idea
+/fybot/config/config.py
+*.log
+*tmp_*
+/excluded_resources/
