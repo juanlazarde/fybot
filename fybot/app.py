@@ -2,7 +2,7 @@
 
 import streamlit as st
 import pages
-# from src import Snapshot
+from core.snapshot import Snapshot
 
 
 FAV_ICON = "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com" \
@@ -33,10 +33,10 @@ def index():
     st.sidebar.title('Navigation')
     selection = st.sidebar.selectbox(label="Make a selection:",
                                      options=list(PAGES.keys()),
-                                     index=0)
+                                     index=2)
 
     if st.sidebar.button("Refresh data"):
-        # Snapshot(forced=True)
+        Snapshot(forced=True)
         st.sidebar.write("Data refreshed")
 
     page = PAGES[selection]

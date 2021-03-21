@@ -36,7 +36,7 @@ class Filter:
         else:
             # TODO: GET SPECIFIC SYMBOLS
             # get price data from ALL the symbols
-            price_data = Snapshot.GetPrice().data
+            price_data = Snapshot().GetPrice().data
 
             log.info("Filter is reading price data from the database")
 

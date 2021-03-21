@@ -18,7 +18,7 @@ class S:
     }
 
     # FOR DEBUG ONLY
-    DEBUG = True
+    DEBUG = False
     MAX_SYMBOLS = 10 if DEBUG else None
 
     # database settings

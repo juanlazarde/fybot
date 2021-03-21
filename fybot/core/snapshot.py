@@ -316,7 +316,7 @@ class Snapshot:
 
             :param list symbols: list of symbols to download fundamentals"""
 
-            chunk_size = 5
+            chunk_size = 200
             # n = 3  # 3 for divide symbols into thirds
             # chunk_size = (len(symbols) + n) // n  # into n-ths
 
