@@ -1,16 +1,5 @@
-"""Stock scanner
+"""Serve integrated data to UX server"""
 
-Downloads list of stocks, filters and analyzes, and provides results on HTML
-via Flask,
-
-To run flask, open the python terminal and run: flask run
-
-
--- Template format
-http://semantic-ui.com
-
-
-"""
 import datetime
 import os
 
@@ -157,16 +146,6 @@ class Index:
 #                            stock=stock)
 #
 #
-# @app.route("/snapshot")
-# def snapshot_wrapper():
-#     """Downloads all data from Snapshot class"""
-#
-#     Snapshot(forced=True)
-#
-#     return redirect(url_for('index'))
-#
-#
-# @app.route("/", methods=['GET', 'POST'])
 # def index():
 #     """Renders index.html page"""
 #
@@ -174,12 +153,7 @@ class Index:
 #     active_filters = S.DEFAULT_FILTERS
 #     data = {}
 #     settings = ''
-#
-#     # refresh data by pressing 'Refresh data' button
-#     if request.method == 'GET':
-#         # TODO: IN HTML PROVIDE OPTIONS OF WHAT SYMBOLS TO DOWNLOAD
-#         Snapshot(forced=False)
-#
+##
 #     # apply filters by pressing 'Submit' button
 #     if request.method == 'POST':
 #         # read current options from index form under name='filter'

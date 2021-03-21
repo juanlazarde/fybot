@@ -56,7 +56,7 @@ class S:
     if not os.path.exists(DATASET_DIR):
         os.makedirs(DATASET_DIR)
 
-    DEFAULT_FILTERS = {'consolidating': {'go': False, 'pct': 6},
+    DEFAULT_FILTERS = {'consolidating': {'go': False, 'pct': 6.0},
                        'breakout': {'go': False, 'pct': 2.5},
                        'ttm_squeeze': {'go': False},
                        'in_the_squeeze': {'go': True},

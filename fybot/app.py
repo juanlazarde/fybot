@@ -19,6 +19,7 @@ st.set_page_config(
 PAGES = {
     "Home": pages.home,
     "News": pages.news,
+    "Scan": pages.scanner,
     "Technical Charts": pages.technical_charts,
     "Strategy Bot": pages.strategy,
     "Options Sniper": pages.options_sniper,
