@@ -1,4 +1,4 @@
-![Financial Bot in Python](https://raw.githubusercontent.com/juanlazarde/fybot/master/FyBot.gif "Financial Bot in Python")
+![Financial Bot in Python](https://github.com/juanlazarde/fybot/blob/master/FyBOT.gif?raw=true "Financial Bot in Python")
 
 # FyBot - Financial Bot in Python
 Financial dashboard with technical scanner, news, and options analysis.
