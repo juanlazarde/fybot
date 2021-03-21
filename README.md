@@ -1,4 +1,4 @@
-![Financial Bot in Python](https://github.com/juanlazarde/fybot/blob/master/FyBOT.gif?raw=true "Financial Bot in Python")
+![Financial Bot in Python](https://github.com/juanlazarde/fybot/blob/master/FyBOT.gif?raw=true "Financial Bot in Python"){:height="50%" width="50%"}
 
 # FyBot - Financial Bot in Python
 Financial dashboard with technical scanner, news, and options analysis.
@@ -19,8 +19,3 @@ Financial dashboard with technical scanner, news, and options analysis.
 
 ### Fybot's Notebooks
 * [Reference Library - for collaboration](https://colab.research.google.com/drive/1qHAt9MiIJtdKBuGhlcfL0wNLCAXwo6Pr?usp=sharing)
-
-### Video Tutorials for this repository:
-* [Candlestick Pattern Recognition](https://www.youtube.com/watch?v=QGkf2-caXmc)
-* [Building a Web-based Technical Screener](https://www.youtube.com/watch?v=OhvQN_yIgCo)
-* [Finding Breakouts](https://www.youtube.com/watch?v=exGuyBnhN_8)
