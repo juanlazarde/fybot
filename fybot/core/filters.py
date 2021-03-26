@@ -4,50 +4,42 @@ import logging
 
 import requests
 import talib
-from lxml import html
+from lxml import html # noqa
 from time import time as t
 
-from core.patterns import candlestick_patterns
-from core.settings import S
-from core.snapshot import Snapshot
-from core.database import Database
+from fybot.core.patterns import candlestick_patterns
+from fybot.core.settings import S
+from fybot.core.database import Database
+import fybot.core.snp as sn
 
 log = logging.getLogger(__name__)
 
 
-class Filter:
-    def __init__(self, filters=None, source_file=False):
+class Signals:
+    def __init__(self,
+                 filters: dict or None = None,
+                 symbols: list or None = None):
         """Apply all filter and signal functions here.
 
         This class will return a signals table and save it in a signals
         database
 
-        :param dict or None filters: dictionary of settings
-        :param bool source_file: True will read Price data from file"""
+        :param filters: dictionary of settings
+        :param symbols: list of symbols to filter, if none all are filtered
+        """
 
+        log.debug("Loading Filters")
         s = t()
+
+        # loading filter settings
         self.filters = filters if filters is not None else S.DEFAULT_FILTERS
 
-        # read price data and format
-        if source_file:
-            price_data = pd.read_pickle(S.PRICE_FILE)
+        # loading price history data
+        _symbols = symbols if symbols is not None else sn.GetAssets().symbols
+        price_data = self.load_price_history(_symbols)
 
-            log.info("Filter is reading price data from the file")
-        else:
-            # TODO: GET SPECIFIC SYMBOLS
-            # get price data from ALL the symbols
-            price_data = Snapshot().GetPrice().data
-
-            log.info("Filter is reading price data from the database")
-
-        # cleanup and format price_history
-        price_data = price_data.drop(['adj_close'], axis=1)
-        price_data = (price_data.set_index(['date', 'symbol'])
-                      .unstack().swaplevel(axis=1)
-                      )
-
-        # extract symbols from dataframe
-        self.symbols = list(price_data.columns.levels[0])
+        # loading used symbols in price history
+        self.symbols = price_data.columns.levels[0].to_list()
         self.symbols.sort()
 
         # define filters to use and create table with signals
@@ -55,18 +47,30 @@ class Filter:
         self.signal = pd.DataFrame(index=self.symbols, columns=columns)
 
         # process filters to populate signal table
-        asyncio.run(self.process_filters(columns=columns,
-                                         price_data=price_data)
-                    )
+        asyncio.run(
+            self.process_filters(
+                columns=columns,
+                price_data=price_data
+            )
+        )
 
         # Save the signal table
-        self.save()
+        asyncio.run(self.save_to_database())
 
         log.info(f"{self.__class__.__name__} took {t() - s} seconds")
 
+    @staticmethod
+    def load_price_history(symbols: list):
+        """cleanup and format price_history"""
+
+        price_data = sn.GetPrice(symbols).data
+        price_data = price_data.drop(['adj_close'], axis=1)
+        price_data = price_data.set_index(['date', 'symbol'])
+        price_data = price_data.unstack()
+        return price_data.swaplevel(axis=1)
+
     async def process_filters(self, columns, price_data):
-        """Fill out signal table with different filters and populate singl
-        table"""
+        """Fill signal table with different symbol row, filter column"""
 
         # for every symbol in a row
         for symbol in self.symbols:
@@ -81,27 +85,13 @@ class Filter:
 
         log.info("Signal table finished")
 
-    def save(self):
-        """save the signal dataframe in a file and the database"""
-
-        self.save_to_file()
-        asyncio.run(self.save_to_database())
-
-    def save_to_file(self):
-        """Save signal table to pickle file"""
-
-        self.signal.to_pickle(S.SIGNALS_FILE)
-
-        log.info("Saved signal table to pickle file")
-
     async def save_to_database(self):
         """Save signal table to database"""
 
         # long format table
-        signal_df = (self.signal.reset_index()
-                     .melt(id_vars=['index'])
-                     .fillna('')
-                     )
+        signal_df = self.signal.reset_index()
+        signal_df = signal_df.melt(id_vars=['index'])
+        signal_df = signal_df.fillna('')
 
         with Database() as db:
             # erase previous table contents
@@ -112,12 +102,14 @@ class Filter:
             # save data into signals table database
             # pd.values deals with an boolean conflict between pandas and SQL
             values = [tuple(x) for x in signal_df.values]
-            sql = """INSERT INTO signals (symbol_id, study, value)
-                     VALUES ((SELECT id FROM symbols WHERE symbol=%s), %s, %s)
-                     ON CONFLICT (symbol_id, study) DO UPDATE
-                     SET symbol_id = excluded.symbol_id,
-                         study = excluded.study,
-                         value = excluded.value;"""
+            sql = """
+                INSERT INTO signals (symbol_id, study, value)
+                VALUES ((SELECT id FROM symbols WHERE symbol=%s), %s, %s)
+                ON CONFLICT (symbol_id, study) DO UPDATE
+                SET symbol_id = excluded.symbol_id,
+                    study = excluded.study,
+                    value = excluded.value;
+                """
             db.executemany(sql, values)
 
             db.timestamp('signals')
@@ -126,21 +118,27 @@ class Filter:
         log.info("Saved signal table to database")
 
     @staticmethod
-    def read_signals():
-        """Read the signals table from the database"""
+    def load_database():
+        """Load signals table from database.
 
-        query = """SELECT symbols.symbol, signals.study, signals.value
-                   FROM signals
-                   INNER JOIN symbols
-                   ON signals.symbol_id = symbols.id;"""
+        :return: Dataframe with index: symbol, columns: study, values: value
+        """
+
+        query = """
+            SELECT symbols.symbol, signals.study, signals.value
+            FROM signals
+            INNER JOIN symbols
+            ON signals.symbol_id = symbols.id;
+            """
         with Database() as db:
             df = pd.read_sql_query(query, db.connection)
 
         # wide format table
         df = df.pivot(index='symbol', columns='study', values='value')
         df = df.replace({'true': True, 'false': False}).fillna('')
-
         return df
+
+    # --------- Filter math goes here ----------------------------------
 
     def consolidating(self, **kwargs):
         df = kwargs['df']
@@ -272,3 +270,19 @@ class Filter:
 
         self.signal.loc[symbol, 'investor_sum'] = reco
         return True
+
+
+class File(Signals):
+    @staticmethod
+    def load():
+        # read price data and format
+
+        price_data = pd.read_pickle(S.PRICE_FILE)
+        log.info("Filter is reading price data from the file")
+        return price_data
+
+    def save_to_file(self):
+        """Save signal table to pickle file"""
+
+        self.signal.to_pickle(S.SIGNALS_FILE)
+        log.info("Saved signal table to pickle file")

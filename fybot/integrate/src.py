@@ -9,10 +9,10 @@ import pytz
 
 import logging
 
-from core.database import Database
-from core.settings import S
-from core.snapshot import Snapshot
-from core.filters import Filter
+from fybot.core.database import Database
+from fybot.core.settings import S
+from fybot.core.snp.assets import GetAssets
+from fybot.core.filters import Signals
 
 log = logging.getLogger()
 
@@ -30,7 +30,7 @@ class Index:
     def load_data(self):
         # load symbols
         try:
-            symbols, within24 = Snapshot.GetAssets.load_database()
+            symbols = GetAssets().symbols
             if symbols.empty:
                 raise Exception("Blank database")
         except Exception as e:
@@ -42,7 +42,7 @@ class Index:
 
         # load signal table
         try:
-            self.signals = Filter.read_signals()
+            self.signals = Signals.load_database()
             if self.signals.empty:
                 raise Exception("Blank database")
         except Exception as e:

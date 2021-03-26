@@ -1,2 +1,2 @@
-# import logging
-# logging.getLogger(__name__).addHandler(logging.NullHandler())
+from .__main__ import *
+

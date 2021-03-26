@@ -1,24 +1,69 @@
+
 import streamlit as st
 
-import pandas as pd
+import fybot.core.snp as snap
+from fybot.core.filters import Signals
+from fybot.core.settings import S
+from fybot.integrate.scanner import Scan
 
-from core.settings import S
-from core.filters import Filter
-from integrate.scanner import Scan
+
+def rerun():
+    raise st.script_runner.RerunException(
+        st.script_request_queue.RerunData(None))
+
+
+def get_table(selected_filters: dict):
+
+    # run filter function and save result to database
+    Signals(selected_filters)
+
+    # prepare information to be presented to html
+    data = Scan(selected_filters).merge_symbol_name()
+    data = data.rename(
+        columns={"security": "Security",
+                 "cdl_sum_ber": "Bear Candles",
+                 "cdl_sum_bul": "Bull Candles",
+                 "investor_sum": "Investor Reco"
+                 }
+    )
+    return data
+
+
+def check_selections(active_filters: list):
+    # check for empty answers
+    if len(active_filters) == 0:
+        st.warning("Make a selection")
+        st.stop()
+        return False
+    return True
 
 
 def app():
+
+    # Navigation menu
+    left_nav, right_nav = st.sidebar.beta_columns([1, 1])
+    if left_nav.button("Refresh data"):
+        with st.spinner(text="Refreshing All Data"):
+            snap.refresh_data(forced=True)
+            st.sidebar.write("Data refreshed")
+
+    if right_nav.button("Export data"):
+        with st.spinner(text="Exporting data"):
+            snap.save_files()
+            st.info(f"""Data saved at: {S.DATASET_DIR}""")
+
+    # Main page
     st.title("Financial Scanner")
-    st.write("""Select the filters for the scanner: (1 bar = 1 day)""")
+    st.write("""Select the filters for the scanner: [1 bar = 1 day]""")
 
+    selected_filters = S.DEFAULT_FILTERS
     column_width = [1, 2, 2]
-
     left, center, right = st.beta_columns(column_width)
-    consolidating_go = left.checkbox(
+    selected_filters['consolidating']['go'] = left.checkbox(
         label="Consolidating wihin",
         value=S.DEFAULT_FILTERS['consolidating']['go'],
     )
-    consolidating_pct = center.number_input(
+    selected_filters['consolidating']['pct'] = center.number_input(
         label="pct",
         min_value=0.0,
         value=S.DEFAULT_FILTERS['consolidating']['pct'],
@@ -26,110 +71,80 @@ def app():
     )
 
     left, center, right = st.beta_columns(column_width)
-    breakout_go = left.checkbox(
+    selected_filters['breakout']['go'] = left.checkbox(
         label="Breakout within",
         value=S.DEFAULT_FILTERS['breakout']['go']
     )
-    breakout_pct = center.number_input(
+    selected_filters['breakout']['pct'] = center.number_input(
         label="pct",
         min_value=0.0,
         value=S.DEFAULT_FILTERS['breakout']['pct'],
         step=0.1
     )
 
-    ttm_squeeze_go = st.checkbox(
+    selected_filters['ttm_squeeze']['go'] = st.checkbox(
         label="Post TTM Squeeze",
         value=S.DEFAULT_FILTERS['ttm_squeeze']['go']
     )
 
-    in_the_squeeze_go = st.checkbox(
-        label="TTM Squeeze per-breakout",
+    selected_filters['in_the_squeeze']['go'] = st.checkbox(
+        label="TTM Squeeze pre-breakout",
         value=S.DEFAULT_FILTERS['in_the_squeeze']['go']
     )
 
-    candlestick_go = st.checkbox(
+    selected_filters['candlestick']['go'] = st.checkbox(
         label="Cadlesticks",
         value=S.DEFAULT_FILTERS['candlestick']['go']
     )
 
     left, center, right = st.beta_columns(column_width)
-    sma_momentum_go = left.checkbox(
+    selected_filters['sma_filter']['go'] = left.checkbox(
         label="SMA fast above slow",
         value=S.DEFAULT_FILTERS['sma_filter']['go'],
-        help="(bullish) signals fast sma crossing over higher than slow sma "
-             "in the latest period"
+        help="(bullish) signals fast sma crossing over higher than slow "
+             "sma in the latest period"
     )
-    sma_fast = center.number_input(
+    selected_filters['sma_filter']['fast'] = center.number_input(
         label="fast (bars)",
         min_value=0,
         value=S.DEFAULT_FILTERS['sma_filter']['fast'],
         step=1
     )
-    sma_slow = right.number_input(
+    selected_filters['sma_filter']['slow'] = right.number_input(
         label="slow (bars)",
         min_value=0,
         value=S.DEFAULT_FILTERS['sma_filter']['slow'],
         step=1
     )
 
-    ema_stacked_go = st.checkbox(
+    selected_filters['ema_stacked']['go'] = st.checkbox(
         label="Close above EMA positively stacked",
         value=S.DEFAULT_FILTERS['ema_stacked']['go'],
         help="(bullish) signals all fast emas are higher than the slow "
              "ema in the latest period."
     )
 
-    investor_reco_go = st.checkbox(
+    selected_filters['investor_reco']['go'] = st.checkbox(
         label="Investor Recommendation",
         value=S.DEFAULT_FILTERS['investor_reco']['go']
     )
 
+    active_filters = [k for k in selected_filters if selected_filters[k]['go']]
+
+    # check for empty answers
+    if len(active_filters) == 0:
+        st.warning("Make a selection")
+        st.stop()
+
     if st.button(label="Run Scan"):
-        # TODO: CHECK THAT AT LEAST ONE OPTION IS SELECTED
+        # get data amd leave it on cache
+        with st.spinner("Retrieving data..."):
+            data = get_table(selected_filters)
 
-        active_filters = {
-            'consolidating':
-                {'go': consolidating_go,
-                 'pct': consolidating_pct},
+            # prepare view
+            data_view = data.drop(columns=active_filters)
+            st.dataframe(data_view)
 
-            'breakout':
-                {'go': breakout_go,
-                 'pct': breakout_pct},
-
-            'ttm_squeeze':
-                {'go': ttm_squeeze_go},
-
-            'in_the_squeeze':
-                {'go': in_the_squeeze_go},
-
-            'candlestick':
-                {'go': candlestick_go},
-
-            'sma_filter':
-                {'go': sma_momentum_go,
-                 'fast': sma_fast,
-                 'slow': sma_slow},
-
-            'ema_stacked':
-                {'go': ema_stacked_go},
-
-            'investor_reco':
-                {'go': investor_reco_go}
-        }
-
-        # run filter function and save result to database
-        Filter(active_filters)
-
-        # get date of last price_history from file or database
+        # show latest price_history database update
         price_update_dt, within24 = Scan.last_update('price_history')
         st.sidebar.write(f"Price update: {price_update_dt}")
-
-        # prepare information to be presented to html
-        data_dict = Scan(active_filters).stocks
-        data = pd.DataFrame(data_dict).T
-        data = data.rename(
-            columns={"security": "Security",
-                     "cdl_sum_ber": "Bear Candles",
-                     "cdl_sum_bul": "Bull Candles"
-                     })
-        st.dataframe(data)

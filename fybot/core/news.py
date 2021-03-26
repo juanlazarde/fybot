@@ -3,15 +3,15 @@ from datetime import datetime as dt
 
 from psaw.PushshiftAPI import PushshiftAPI
 
-from core.snapshot import Snapshot
-from core.database import Database
+from fybot.core.database import Database
+import fybot.core.snp as sn
 
 
 class News:
     def __init__(self):
         """Get news from different sources"""
         # make sure to have the latest symbols in the database
-        Snapshot.GetAssets()
+        sn.GetAssets()
 
     @staticmethod
     def capture_reddit(subsources, start_date):

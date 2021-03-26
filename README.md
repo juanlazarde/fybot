@@ -1,4 +1,4 @@
-<img src="https://github.com/juanlazarde/fybot/blob/master/FyBOT.gif?raw=true" width="50%" height="50%">
+<img src="https://github.com/juanlazarde/fybot/blob/master/FyBOT.gif?raw=true" alt="FyBot" width="50%" height="50%">
 
 # FyBot - Financial Bot in Python
 Financial dashboard with technical scanner, news, and options analysis.
@@ -11,7 +11,7 @@ Financial dashboard with technical scanner, news, and options analysis.
 * Configure `config.py`, under `config` directory. 
 * Encrypt your TDA account: run `fybot` and select **Encrypt TDA Account**
 * Create new database, i.e. 'source'.
-* Create tables in database by running `python app.py create_table`
+* Create tables in database by running `python fybot create_table`
 
 ## Run
 * Run `python fybot`. Normal operation will open a browser.

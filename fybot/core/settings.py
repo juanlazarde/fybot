@@ -5,10 +5,26 @@ from config import config
 class S:
     # define files
     DATASET_DIR = '../datasets'
+    LOGGING_FILE = 'config/logging_config.ini'
     SYMBOLS_FILE = 'symbols.csv'
     PRICE_FILE = 'price.pkl'
     FUNDAMENTALS_FILE = 'fundamentals.pkl'
     SIGNALS_FILE = 'signals.pkl'
+    TEST_FILE = 'test.pkl'
+
+    # files with path
+    ROOT_DIR = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
+    DATASET_DIR = os.path.abspath(os.path.join(ROOT_DIR, DATASET_DIR))
+    LOGGING_FILE = os.path.join(ROOT_DIR, LOGGING_FILE)
+    SYMBOLS_FILE = os.path.join(DATASET_DIR, SYMBOLS_FILE)
+    PRICE_FILE = os.path.join(DATASET_DIR, PRICE_FILE)
+    FUNDAMENTALS_FILE = os.path.join(DATASET_DIR, FUNDAMENTALS_FILE)
+    SIGNALS_FILE = os.path.join(DATASET_DIR, SIGNALS_FILE)
+    TEST_FILE = os.path.join(DATASET_DIR, TEST_FILE)
+
+    # create dataset directory if not there
+    if not os.path.exists(DATASET_DIR):
+        os.makedirs(DATASET_DIR)
 
     # other constants
     DAYS = 150
@@ -19,18 +35,13 @@ class S:
 
     # FOR DEBUG ONLY
     DEBUG = False
-    MAX_SYMBOLS = 10 if DEBUG else None
+    MAX_SYMBOLS = 300 if DEBUG else None
 
     # database settings
     DB_HOST = 'localhost'
     DB_USER = 'postgres'
     DB_PASSWORD = 'diamondhands'
     DB_NAME = 'source'
-
-    # flask settings
-    FLASK_SECRET_KEY = "jPRgt7XGwp5fuvVh846TAZDbAbTKTF8hpaHSacAqyEuTgkE6Kkuv" \
-                       "yW2KDzQhhdVu2xKR7UExyfuQ8Nd4nxjezbHKJUwJ8QjFrsfRGVcH" \
-                       "AHUzyvdAjCWZDLr7zFENhRA"
 
     # Encryption
     SECRET_KEY_FILE = config.SECRET_KEY
@@ -42,20 +53,11 @@ class S:
     TDA_ACCOUNT_E = config.TDA_ACCOUNT
 
     # Alpaca Settings
-    # you need to create a config.py to house the credentials
     ALPACA_KEY = config.ALPACA_API_KEY
     ALPACA_SECRET = config.ALPACA_SECRET_KEY
     ALPACA_ENDPOINT = config.ALPACA_ENDPOINT
 
-    SYMBOLS_FILE = os.path.join(DATASET_DIR, SYMBOLS_FILE)
-    PRICE_FILE = os.path.join(DATASET_DIR, PRICE_FILE)
-    FUNDAMENTALS_FILE = os.path.join(DATASET_DIR, FUNDAMENTALS_FILE)
-    SIGNALS_FILE = os.path.join(DATASET_DIR, SIGNALS_FILE)
-
-    # create dataset directory if not there
-    if not os.path.exists(DATASET_DIR):
-        os.makedirs(DATASET_DIR)
-
+    # default values
     DEFAULT_FILTERS = {'consolidating': {'go': False, 'pct': 6.0},
                        'breakout': {'go': False, 'pct': 2.5},
                        'ttm_squeeze': {'go': False},

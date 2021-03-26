@@ -6,7 +6,7 @@ import sys
 
 from cryptography.fernet import Fernet
 
-from core.settings import S
+from fybot.core.settings import S
 
 
 class Encryption:

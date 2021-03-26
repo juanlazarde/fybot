@@ -1,10 +1,10 @@
 TA-lib
 pandas>=1.2.3
-yfinance>=0.1.55
+yfinance>=0.1.56
 plotly>=4.14.3
 
 requests>=2.25.1
-lxml>=4.6.2
+lxml>=4.6.3
 
 psycopg2>=2.8.6
 psaw>=0.1.0
@@ -31,3 +31,5 @@ ta>=0.7.0
 memory_profiler>=0.58.0
 alpaca_trade_api>=1.1.0
 tda-api>=1.1.8
+
+httpx~=0.17.1
