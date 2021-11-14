@@ -13,7 +13,9 @@ log = logging.getLogger(__name__)
 
 
 class GetAssets:
-    def __init__(self, source: str, forced: bool = False):
+    def __init__(self,
+                 source: str = '',
+                 forced: bool = False):
         """Load symbols from database or file, when older than 24 hours it
         downloads. If DEBUG then symbols list is limited.
 
@@ -83,7 +85,7 @@ class GetAssets:
             log.debug("Symbols downloaded from Nasdaq")
             return df
         except Exception as e:
-            log.warning(f"Nasdaq download failed. {e}")
+            log.warning(f"Symbol list not loaded from Nasdaq. {e}")
 
         # or download from Alpaca
         try:
@@ -92,7 +94,7 @@ class GetAssets:
             log.debug("Symbols downloaded from Alpaca")
             return df
         except Exception as e:
-            log.warning(f"Alpaca download failed. {e}")
+            log.warning(f"Symbol list not loaded from Alpaca. {e}")
 
         # or download S&P 500 from Wikipedia
         try:
@@ -101,7 +103,7 @@ class GetAssets:
             log.debug("Symbols downloaded from Wikipedia S&P 500")
             return df
         except Exception as e:
-            log.warning(f"Wikipedia S&P500 download failed. {e}")
+            log.warning(f"Symbol list not loaded from Wikipedia S&P500. {e}")
 
         # unable to download symbols
         log.critical('Could not download the Symbols. Check code/sources')

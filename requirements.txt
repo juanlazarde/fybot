@@ -1,35 +1,31 @@
-TA-lib
-pandas>=1.2.3
-yfinance>=0.1.56
-plotly>=4.14.3
+pandas
+yfinance
+plotly
 
-requests>=2.25.1
-lxml>=4.6.3
+requests
+lxml
 
-psycopg2>=2.8.6
-psaw>=0.1.0
+psycopg2
+psaw
 
-aiohttp>=3.7.4.post0
-asyncpg>=0.22.0
+aiohttp
+asyncpg
 
-pytz>=2021.1
+pytz
 
-asyncio>=3.4.3
+asyncio
 
-cryptography>=3.4.6
-selenium
+cryptography
 
-yahooquery>=2.2.15
+yahooquery
 
-streamlit>=0.79.0
+streamlit
 
-matplotlib>=3.3.4
-numpy>=1.20.1
+matplotlib
+numpy
 
-ipython>=7.21.0
-ta>=0.7.0
-memory_profiler>=0.58.0
-alpaca_trade_api>=1.1.0
-tda-api>=1.1.8
+ta
 
-httpx~=0.17.1
+httpx
+
+Authlib==0.15.4

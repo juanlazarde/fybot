@@ -39,9 +39,8 @@ def check_selections(active_filters: list):
 
 
 def app():
-
     # Navigation menu
-    left_nav, right_nav = st.sidebar.beta_columns([1, 1])
+    left_nav, right_nav = st.sidebar.columns([1, 1])
     if left_nav.button("Refresh data"):
         with st.spinner(text="Refreshing All Data"):
             snap.refresh_data(forced=True)
@@ -58,7 +57,7 @@ def app():
 
     selected_filters = S.DEFAULT_FILTERS
     column_width = [1, 2, 2]
-    left, center, right = st.beta_columns(column_width)
+    left, center, right = st.columns(column_width)
     selected_filters['consolidating']['go'] = left.checkbox(
         label="Consolidating wihin",
         value=S.DEFAULT_FILTERS['consolidating']['go'],
@@ -70,7 +69,7 @@ def app():
         step=0.1,
     )
 
-    left, center, right = st.beta_columns(column_width)
+    left, center, right = st.columns(column_width)
     selected_filters['breakout']['go'] = left.checkbox(
         label="Breakout within",
         value=S.DEFAULT_FILTERS['breakout']['go']
@@ -97,7 +96,7 @@ def app():
         value=S.DEFAULT_FILTERS['candlestick']['go']
     )
 
-    left, center, right = st.beta_columns(column_width)
+    left, center, right = st.columns(column_width)
     selected_filters['sma_filter']['go'] = left.checkbox(
         label="SMA fast above slow",
         value=S.DEFAULT_FILTERS['sma_filter']['go'],

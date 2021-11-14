@@ -29,6 +29,7 @@ class Signals:
         """
 
         log.debug("Loading Filters")
+
         s = t()
 
         # loading filter settings

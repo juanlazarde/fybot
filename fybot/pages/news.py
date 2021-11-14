@@ -8,7 +8,7 @@ from fybot.core.settings import S
 def app():
     st.title("News")
     with st.spinner(text="Loading Symbol Data"):
-        nw = News()
+        nw = News
 
     sources = st.sidebar.selectbox(label="Select your sources",
                                    options=S.NEWS['sources'],

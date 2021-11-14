@@ -34,8 +34,8 @@ class S:
     }
 
     # FOR DEBUG ONLY
-    DEBUG = False
-    MAX_SYMBOLS = 300 if DEBUG else None
+    DEBUG = True
+    MAX_SYMBOLS = 150 if DEBUG else None
 
     # database settings
     DB_HOST = 'localhost'

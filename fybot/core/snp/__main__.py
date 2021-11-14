@@ -37,7 +37,8 @@ if __name__ == '__main__':
     from logging.config import fileConfig
     from fybot.core.settings import S
 
-    fileConfig(S.LOGGING_FILE, disable_existing_loggers=True)
+    fileConfig(S.LOGGING_FILE, disable_existing_loggers=False)
     log = logging.getLogger(__name__)
+
     # save_files()
     refresh_data(forced=False, save_to_file=False)
