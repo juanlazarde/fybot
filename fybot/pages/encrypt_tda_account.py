@@ -1,7 +1,7 @@
 """Encrypte TDA Account using account Key"""
 
 import streamlit as st
-from fybot.core.encryption import Encryption
+from core.encryption import Encryption
 
 
 def app():

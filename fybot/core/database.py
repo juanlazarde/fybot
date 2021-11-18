@@ -6,7 +6,7 @@ import psycopg2.extras
 import pytz
 import logging
 
-from fybot.core.settings import S
+from core.settings import S
 
 log = logging.getLogger(__name__)
 

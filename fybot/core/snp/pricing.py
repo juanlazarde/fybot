@@ -9,9 +9,9 @@ import httpx
 import pandas as pd
 import yfinance as yf
 
-from fybot.core.database import Database
-from fybot.core.settings import S
-from fybot.core.fy_tda import TDA
+from core.database import Database
+from core.settings import S
+from core.fy_tda import TDA
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class GetPrice:
     def __init__(self,
                  symbols: list = None,
                  forced: bool = False,
-                 source: str = 'tda'):
+                 source: str = 'con'):
         """Gets price history data from download if not within 24 hours,
         then from data, finally from file.
 
@@ -87,8 +87,8 @@ class GetPrice:
 
     @staticmethod
     def download(symbols: list, source: str):
-        source = 'tda' if (source == '' or source is None) else source
-        if source == 'tda':
+        source = 'con' if (source == '' or source is None) else source
+        if source == 'con':
             df = asyncio.run(Source().tda(symbols=symbols))
         elif source == 'yahoo':
             df = Source().yahoo(symbols=symbols)
@@ -242,7 +242,7 @@ class Source(GetPrice):
 
     # TODO: JUST GET LATEST PRICE DATA, MAY REQUIRE SINGLE TICKER DOWNLOAD
     # @staticmethod
-    # def date_range(self):
+    # def date_range(_wtc):
     #     """Dates to download history.
     #     Total days comes from Settings, whether you want 150 days back.
     #     The dat of the last update is the latest date in the symbols
@@ -286,7 +286,7 @@ class File(GetPrice):
 
 
 if __name__ == '__main__':
-    from fybot.core.snp.assets import GetAssets
+    from core.snp.assets import GetAssets
     from logging.config import fileConfig
 
     fileConfig(S.LOGGING_FILE, disable_existing_loggers=False)

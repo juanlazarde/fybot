@@ -1,6 +1,6 @@
 from sys import exit
 from time import time as t
-import fybot.core.snp as sn
+import core.snp as sn
 
 
 def main():

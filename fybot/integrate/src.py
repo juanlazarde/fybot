@@ -9,10 +9,10 @@ import pytz
 
 import logging
 
-from fybot.core.database import Database
-from fybot.core.settings import S
-from fybot.core.snp.assets import GetAssets
-from fybot.core.filters import Signals
+from core.database import Database
+from core.settings import S
+from core.snp.assets import GetAssets
+from core.filters import Signals
 
 log = logging.getLogger()
 
@@ -37,7 +37,7 @@ class Index:
             print(e)
             symbols = pd.read_csv(
                 S.SYMBOLS_FILE, index_col='symbol', usecols=[0, 1])
-        # self.stocks = symbols.T.to_dict()
+        # _wtc.stocks = symbols.T.to_dict()
         self.stocks = symbols.set_index('symbol').T.to_dict('dict')
 
         # load signal table
@@ -116,7 +116,7 @@ class Index:
 #         print(e)
 #         symbols = pd.read_csv(
 #             S.SYMBOLS_FILE, index_col='symbol', usecols=[0, 1])
-#     # self.stocks = symbols.T.to_dict()
+#     # _wtc.stocks = symbols.T.to_dict()
 #     stocks = symbols.set_index('symbol').T.to_dict('dict')
 #
 #     # df = pd.read_csv(S.SYMBOLS_FILE, index_col='symbol', usecols=[0, 1])
@@ -246,11 +246,11 @@ class Index:
 #             except Exception as e:
 #                 print("error", str(e))
 
-# if os.path.isfile(self.symbols):
-#     with open(self.symbols, mode='r') as f:
+# if os.path.isfile(_wtc.symbols):
+#     with open(_wtc.symbols, mode='r') as f:
 #         companies = {rows[0]: rows[1] for rows in csv.reader(f)}
 # else:
-#     companies = self.download_sp500()
+#     companies = _wtc.download_sp500()
 
 # symbols = [k for k in companies.keys()]
 # symbols = list(set(symbols))
@@ -286,14 +286,14 @@ class Index:
 # df = df.T
 # df.columns = df.iloc[0]
 # df = df.drop(df.index[0])
-# self.stocks = df.to_dict()
+# _wtc.stocks = df.to_dict()
 
 # #        # replace '.' with '-' a Yahoo Finance issue
 #         df = df.assign(
 #             Symbol=lambda x: x['Symbol'].str.replace('.', '-', regex=True))
 
 # with open(Const.symbols_file) as f:
-#     self.stocks = {row[0]: {"company": row[1]}
+#     _wtc.stocks = {row[0]: {"company": row[1]}
 #                    for row in csv.reader(f)}
 
 # # replace '.' with '-' a Yahoo Finance issue
@@ -312,7 +312,7 @@ class Index:
 #         bull = sum([tree.count(x) for x in bull_words])
 #         bear = sum([tree.count(x) for x in bear_words])
 #
-#         self.signal.loc[symbol, 'investor_sum'] = \
+#         _wtc.signal.loc[symbol, 'investor_sum'] = \
 #             "Bull {}, Bear {}".format(bull, bear)
 #         return True
 
@@ -438,19 +438,19 @@ class Index:
 # -python/
 
 # class TurboSave:
-#      def __init__(self, assets, price_history, fundamental):
-#          self.assets = assets
-#          self.fundamental = fundamental
-#          self.price = price_history
-#          asyncio.run(self.to_file())
-#          asyncio.run(self.to_database())
+#      def __init__(_wtc, assets, price_history, fundamental):
+#          _wtc.assets = assets
+#          _wtc.fundamental = fundamental
+#          _wtc.price = price_history
+#          asyncio.run(_wtc.to_file())
+#          asyncio.run(_wtc.to_database())
 #
-#      async def to_file(self):
-#          # self.assets.data.to_csv(S.SYMBOLS_FILE, index=False)
-#          # self.fundamental.data.to_pickle(S.FUNDAMENTALS_FILE)
-#          self.price.data.to_pickle(S.PRICE_FILE)
+#      async def to_file(_wtc):
+#          # _wtc.assets.data.to_csv(S.SYMBOLS_FILE, index=False)
+#          # _wtc.fundamental.data.to_pickle(S.FUNDAMENTALS_FILE)
+#          _wtc.price.data.to_pickle(S.PRICE_FILE)
 #
-#      async def to_database(self):
+#      async def to_database(_wtc):
 #          def timestamp(table):
 #              return f"""INSERT INTO last_update (tbl)
 #                         VALUES ('{table}')
@@ -511,16 +511,16 @@ class Index:
 #
 # # main database saving function try: async with asyncpg.create_pool(
 # host=S.DB_HOST, database=S.DB_NAME, user=S.DB_USER,
-# password=S.DB_PASSWORD) as pool: await symbols(self.assets.data) await
-# asyncio.gather( fundamental(self.fundamental.data), price_history(
-# self.price.data) ) except Exception as e: print(e) sys.exit()
+# password=S.DB_PASSWORD) as pool: await symbols(_wtc.assets.data) await
+# asyncio.gather( fundamental(_wtc.fundamental.data), price_history(
+# _wtc.price.data) ) except Exception as e: print(e) sys.exit()
 
 
 # # function to collect data in a json format
 # def jsonize(x): return json.dumps(x)
 #
 # # save fundamental data in a json in the column of the source
-# self.data['yfinance'] = list(map(jsonize, self.data['yfinance']))
+# _wtc.data['yfinance'] = list(map(jsonize, _wtc.data['yfinance']))
 
 
 # values = df.to_records(index=False)

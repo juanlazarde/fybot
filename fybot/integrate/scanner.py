@@ -10,10 +10,10 @@ import pytz
 
 import logging
 
-from fybot.core.database import Database
-from fybot.core.settings import S
-import fybot.core.filters as fl
-import fybot.core.snp as sn
+from core.database import Database
+from core.settings import S
+import core.filters as fl
+import core.snp as sn
 
 log = logging.getLogger()
 

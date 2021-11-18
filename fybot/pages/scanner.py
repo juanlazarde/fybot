@@ -1,10 +1,10 @@
 
 import streamlit as st
 
-import fybot.core.snp as snap
-from fybot.core.filters import Signals
-from fybot.core.settings import S
-from fybot.integrate.scanner import Scan
+import core.snp as snap
+from core.filters import Signals
+from core.settings import S
+from integrate.scanner import Scan
 
 
 def rerun():

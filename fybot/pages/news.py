@@ -1,8 +1,8 @@
 """News page"""
 
 import streamlit as st
-from fybot.core.news import News
-from fybot.core.settings import S
+from core.news import News
+from core.settings import S
 
 
 def app():

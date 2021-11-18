@@ -7,8 +7,8 @@ import logging
 from tda.auth import easy_client as tda_connection
 from tda.streaming import StreamClient
 
-from fybot.core.settings import S
-from fybot.core.encryption import Encryption
+from core.settings import S
+from core.encryption import Encryption
 
 log = logging.getLogger(__name__)
 

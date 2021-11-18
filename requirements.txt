@@ -28,4 +28,10 @@ ta
 
 httpx
 
-Authlib==0.15.4
+
+ipython
+python-dateutil
+
+scipy
+
+selenium

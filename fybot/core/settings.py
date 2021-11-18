@@ -1,8 +1,15 @@
+"""Program settings are configured here.
+Personalized data, like passwords, are set in config.py"""
+
 import os
-from config import config
+import config.config as config
 
 
 class S:
+    # FOR DEBUG ONLY
+    DEBUG = True
+    MAX_SYMBOLS = 150 if DEBUG else None
+
     # define files
     DATASET_DIR = '../datasets'
     LOGGING_FILE = 'config/logging_config.ini'
@@ -28,20 +35,14 @@ class S:
 
     # other constants
     DAYS = 150
-    NEWS = {
-        'sources': ['Reddit'],
-        'subsources': ['wallstreetbets', 'options']
-    }
-
-    # FOR DEBUG ONLY
-    DEBUG = True
-    MAX_SYMBOLS = 150 if DEBUG else None
+    USER_NAME = config.NAME
+    USER_EMAIL = config.EMAIL
 
     # database settings
-    DB_HOST = 'localhost'
-    DB_USER = 'postgres'
-    DB_PASSWORD = 'diamondhands'
-    DB_NAME = 'source'
+    DB_HOST = config.DB_HOST
+    DB_USER = config.DB_USER
+    DB_PASSWORD = config.DB_PASSWORD
+    DB_NAME = config.DB_NAME
 
     # Encryption
     SECRET_KEY_FILE = config.SECRET_KEY
@@ -58,6 +59,7 @@ class S:
     ALPACA_ENDPOINT = config.ALPACA_ENDPOINT
 
     # default values
+    # scanner.py filters
     DEFAULT_FILTERS = {'consolidating': {'go': False, 'pct': 6.0},
                        'breakout': {'go': False, 'pct': 2.5},
                        'ttm_squeeze': {'go': False},
@@ -67,3 +69,48 @@ class S:
                        'ema_stacked': {'go': True},
                        'investor_reco': {'go': False}
                        }
+
+    # news.py settings
+    NEWS = {
+        'sources': ['Reddit'],
+        'subsources': ['wallstreetbets', 'options']
+    }
+
+    # option_sniper.py settings
+    OPTION_SNIPER = {
+        'DEBUG': {
+            'save_load_pickle': False,
+            'export': False,
+            'force_download': False,
+            'data': DATASET_DIR,
+        },
+        'WATCHLIST': {
+            'watchlist_0': 'AMD,AMZN',
+            'watchlist_1': 'SPY, TQQQ',
+            'watchlist_2': 'TSLA, RIVN, LCID',
+            'watchlist_3': 'AMD, NVDA, AMAT',
+            'watchlist_4': 'PG, JNJ, KC',
+            'watchlist_5': 'AMZN, APPL',
+            'watchlist_current': '',
+            'tda_watchlist': 'default',
+            'selected': 0
+        },
+        'FILTERS': {
+            'top_n': 5,
+            'min_price': 1.00,
+            'max_price': 5000.00,
+            'max_risk': 20000.00,
+            'min_return_pct': 0.1,
+            'max_dte': 60,
+            'min_dte': 0,
+            'premium': "credit",
+            'strategies': "naked",
+            'option_type': "put, call",
+            'min_delta': 0.15,
+            'max_delta': 0.30,
+            'min_volume': 1.,
+            'min_open_int': 1.,
+            'max_bid_ask_pct': 10.0,
+            'strike_price_spread': 10.0,
+        },
+    }

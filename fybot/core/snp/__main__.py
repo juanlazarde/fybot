@@ -1,7 +1,7 @@
 import logging
 from time import time as t
 
-import fybot.core.snp as sn
+import core.snp as sn
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ def refresh_data(forced: bool = False, save_to_file: bool = False):
 
 if __name__ == '__main__':
     from logging.config import fileConfig
-    from fybot.core.settings import S
+    from core.settings import S
 
     fileConfig(S.LOGGING_FILE, disable_existing_loggers=False)
     log = logging.getLogger(__name__)

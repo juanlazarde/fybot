@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 import pandas as pd
 
-from fybot.core.database import Database
+from core.database import Database
 
 
 class Portfolio:

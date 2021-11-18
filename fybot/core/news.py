@@ -3,8 +3,8 @@ from datetime import datetime as dt
 
 from psaw.PushshiftAPI import PushshiftAPI
 
-from fybot.core.database import Database
-import fybot.core.snp as sn
+from core.database import Database
+import core.snp as sn
 
 
 class News:

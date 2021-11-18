@@ -7,10 +7,10 @@ import talib
 from lxml import html # noqa
 from time import time as t
 
-from fybot.core.patterns import candlestick_patterns
-from fybot.core.settings import S
-from fybot.core.database import Database
-import fybot.core.snp as sn
+from core.patterns import candlestick_patterns
+from core.settings import S
+from core.database import Database
+import core.snp as sn
 
 log = logging.getLogger(__name__)
 

@@ -1,3 +1,9 @@
+# Save this file as config.py in the config directory.
+# Do not share this file with anyone, do not post
+
+# Profile
+NAME = "<YOUR NAME"
+EMAIL = "<YOUR EMAIL>"
 
 # Database info
 DB_HOST = 'localhost'

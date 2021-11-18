@@ -8,9 +8,9 @@ import httpx
 import pandas as pd
 import yahooquery as yq
 
-from fybot.core.database import Database
-from fybot.core.settings import S
-from fybot.core.fy_tda import TDA
+from core.database import Database
+from core.settings import S
+from core.fy_tda import TDA
 
 log = logging.getLogger(__name__)
 
@@ -120,7 +120,7 @@ class GetFundamental:
 
         # concatenate tables using 'symbol' as index
         df = pd.concat([df_tda, df_yahoo],
-                       keys=['tda', 'yahoo'],
+                       keys=['con', 'yahoo'],
                        axis=1)
         df.rename_axis('symbol', inplace=True)
         log.debug("Fundamentals downloaded")
@@ -322,7 +322,7 @@ class File(GetFundamental):
 
 
 if __name__ == '__main__':
-    from fybot.core.snp.assets import GetAssets
+    from core.snp.assets import GetAssets
     from logging.config import fileConfig
 
     fileConfig(S.LOGGING_FILE, disable_existing_loggers=False)

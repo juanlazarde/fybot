@@ -8,7 +8,16 @@ https://github.com/daniellewisdl/streamlit-cheat-sheet/blob/master/app.py
 """
 
 import streamlit as st
-import fybot.pages as pages
+
+import pages
+from core.settings import S
+from pages import (
+    news,
+    option_sniper,
+    scanner,
+    technical_charts,
+    encrypt_tda_account
+)
 
 # Streamlit Configuration
 PAGE_TITLE = "Financial Scanner"
@@ -19,17 +28,17 @@ MENU_BUG = "https://github.com/juanlazarde/fybot/issues"
 MENU_ABOUT = "# FyBot #" \
              "Financial dashboard with technical scanner, news, and options " \
              "analysis."
-
-# Pages in the app
+DEFAULT_PAGE = 2
 PAGES = {
     "News": pages.news,
     "Scan": pages.scanner,
+    "Option Sniper": pages.option_sniper,
     "Technical Charts": pages.technical_charts,
     "Encrypt TDA Account": pages.encrypt_tda_account,
 }
 
 
-def index():
+def main():
     st.set_page_config(
         page_title=PAGE_TITLE,
         page_icon=PAGE_ICON,
@@ -41,12 +50,17 @@ def index():
             'About': MENU_ABOUT
         }
     )
+    st.sidebar.markdown(f"Hi, **{S.USER_NAME}**")
     st.sidebar.title('Navigation')
     selection = st.sidebar.selectbox(
         label="Make a selection:",
         options=list(PAGES.keys()),
-        index=1
+        index=DEFAULT_PAGE
     )
 
     page = PAGES[selection]
     page.app()
+
+
+if __name__ == '__main__':
+    main()

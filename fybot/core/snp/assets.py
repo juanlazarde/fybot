@@ -6,8 +6,8 @@ from time import time as t
 
 import pandas as pd
 
-from fybot.core.database import Database
-from fybot.core.settings import S
+from core.database import Database
+from core.settings import S
 
 log = logging.getLogger(__name__)
 
