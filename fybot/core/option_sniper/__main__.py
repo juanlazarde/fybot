@@ -1,18 +1,28 @@
+"""This module implements Option analysis and recommendations"""
+
 import pickle
 from datetime import datetime, timedelta, date, time, timezone
 from sys import exit
 
 import streamlit as st
 
-from core.utility import fix_path
+from core.utils import fix_path
 from core.fy_tda import TDA
 import core.option_sniper.strategy as sniper_strategy
 from core.option_sniper.download import get_all_tables
-from core.utility import Watchlist
+from core.utils import Watchlist
 
 
 class GetOptions:
-    """Get options from TDA or local Pickle file"""
+    """Get options from TDA or local Pickle file.
+
+    Download the options from TDA and save a local copy, or
+    if the market is closed, lods options from the local file.
+
+    :param cfg: Configuration dictionary.
+    :param tda: TDA client.
+    :param wtc: List of symbols to analyze.
+    """
     options = None
 
     def __init__(self, cfg, tda, wtc):

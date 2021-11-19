@@ -1,23 +1,15 @@
 """User interface through Streamlit only
 
 Streamlit GitHub
-https://github.com/streamlit
+<https://github.com/streamlit>
 
 Cheat sheet
-https://github.com/daniellewisdl/streamlit-cheat-sheet/blob/master/app.py
+<https://github.com/daniellewisdl/streamlit-cheat-sheet/blob/master/app.py>
 """
-
 import streamlit as st
 
 import pages
 from core.settings import S
-from pages import (
-    news,
-    option_sniper,
-    scanner,
-    technical_charts,
-    encrypt_tda_account
-)
 
 # Streamlit Configuration
 PAGE_TITLE = "Financial Scanner"
@@ -26,8 +18,7 @@ PAGE_ICON = "https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com" \
 MENU_GET_HELP = "https://github.com/juanlazarde/fybot"
 MENU_BUG = "https://github.com/juanlazarde/fybot/issues"
 MENU_ABOUT = "# FyBot #" \
-             "Financial dashboard with technical scanner, news, and options " \
-             "analysis."
+             "Financial dashboard: technical scanner, news, & options analysis"
 DEFAULT_PAGE = 2
 PAGES = {
     "News": pages.news,

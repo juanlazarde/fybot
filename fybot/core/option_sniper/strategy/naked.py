@@ -1,8 +1,9 @@
 import pandas as pd
 import streamlit as st
+import core.formatter as fm
 
 
-def naked(df, filters: dict):
+def naked(df: pd.DataFrame, filters: dict) -> pd.DataFrame:
     """Retrieve naked options based on the parameters given.
 
     :param df: Option chain table.
@@ -11,174 +12,222 @@ def naked(df, filters: dict):
     """
     # variable assignment
     option_type = filters['option_type'].lower().strip()
+    # TODO: Make Debit/credit premium type work
+    premium_type = filters['premium_type'].lower().strip()
     option_itm = False
-    min_price = float(filters['min_price'])
-    max_price = float(filters['max_price'])
     max_risk = float(filters['max_risk'])
-    min_return_pct = float(filters['min_return_pct'])
+    min_return_pct = float(filters['min_return_pct'])/100
     max_dte = int(filters['max_dte'])
     min_dte = int(filters['min_dte'])
     max_delta = float(filters['max_delta'])
-    min_delta = float(filters['min_delta'])
-    min_open_int = int(filters['min_open_int'])
-    min_volume = int(filters['min_volume'])
-    max_bid_ask_pct = float(filters['max_bid_ask_pct'])
-    top_n = int(filters['top_n'])
+    min_open_int_pctl = float(filters['min_open_int_pctl'])/100
+    min_volume_pctl = float(filters['min_volume_pctl'])/100
+    max_bid_ask_pctl = float(filters['max_bid_ask_pctl'])/100
 
     # ------- Filter options source data
     # clean table
-    df = df[df['delta'] != 'NaN']
-    df = df[df['openInterest'] > 0]
-    df = df[df['totalVolume'] > 0]
-    df = df[df['bid'] > 0]
-    df = df[df['ask'] > 0]
+    _cols = [
+        'putCall',
+        'symbol',
+        # 'description',
+        'exchangeName',
+        # 'bid',
+        # 'ask',
+        'last',
+        # 'mark',
+        'bidSize',
+        'askSize',
+        'bidAskSize',
+        'lastSize',
+        'highPrice',
+        'lowPrice',
+        'openPrice',
+        'closePrice',
+        # 'totalVolume',
+        'tradeDate',
+        'tradeTimeInLong',
+        'quoteTimeInLong',
+        'netChange',
+        # 'volatility',
+        # 'delta',
+        'gamma',
+        'theta',
+        'vega',
+        'rho',
+        # 'openInterest',
+        'timeValue',
+        'theoreticalOptionValue',
+        'theoreticalVolatility',
+        'optionDeliverablesList',
+        # 'strikePrice',
+        'expirationDate',
+        # 'daysToExpiration',
+        'expirationType',
+        'lastTradingDay',
+        # 'multiplier',
+        'settlementType',
+        'deliverableNote',
+        'isIndexOption',
+        'percentChange',
+        'markChange',
+        'markPercentChange',
+        'intrinsicValue',
+        # 'inTheMoney',
+        'pennyPilot',
+        'mini',
+        'nonStandard'
+    ]
+    df.drop(columns=_cols, inplace=True)
+    df.reset_index(inplace=True)
+    df.drop(columns=['symbol'], inplace=True)
+    df.sort_values(by='stock', ascending=True, inplace=True)
+    df = df[(df['delta'] != 'NaN')
+            & (df['openInterest'] > 0)
+            & (df['totalVolume'] > 0)
+            & (df['bid'] > 0)
+            & (df['ask'] > 0)
+            ]
 
-    # df2 will be used only in the register below, along with df3
-    df2 = df.copy()
+    # Impact log on filters over original database
+    _shp = df.shape[0]
+    impact = {'Starting size': f"{_shp}"}
 
     # filter
     if option_type in ['put', 'call']:
-        df = df[df['putCall'].str.lower() == option_type]
-    df = df[df['inTheMoney'] == option_itm]
-    df = df[(df['delta'] <= max_delta) &
-            (df['delta'] >= -max_delta)]
-    if min_delta < max_delta:
-        df = df[(df['delta'] <= min_delta) &
-                (df['delta'] >= -min_delta)]
-    df = df[df['openInterest'] >= min_open_int]
-    df = df[df['totalVolume'] >= min_volume]
-    df = df[(df['daysToExpiration'] >= min_dte) &
-            (df['daysToExpiration'] <= max_dte)]
-    df = df[(df['strikePrice'] >= min_price) &
-            (df['strikePrice'] <= max_price)]
+        df = df[df['option_type'].str.lower() == option_type]
+    impact['Option type'] = f"{df.shape[0]/_shp:.0%}"
+
+    if premium_type == 'credit':
+        df = df[(df['inTheMoney'] == option_itm)]
+    impact['ITM'] = f"{df.shape[0] / _shp:.0%}"
+
+    df = df[(df['delta'] <= max_delta)
+            & (df['delta'] >= -max_delta)]
+    impact['Delta'] = f"{df.shape[0] / _shp:.0%}"
+
+    df = df[(df['daysToExpiration'] >= min_dte)
+            & (df['daysToExpiration'] <= max_dte)]
+    impact['DTE'] = f"{df.shape[0] / _shp:.0%}"
 
     # calculated columns
-    df['bid_ask_pct'] = (df['ask'] / df['bid']) - 1
-    df['max_profit'] = df['mark'] * df['multiplier']
-    df['risk'] = df['strikePrice'] * df['multiplier'] - df['max_profit']
-    df['return'] = 100 * df['max_profit'] / df['risk']
-    df['return_day'] = df['return'] / (df['daysToExpiration'] + .00001)
+    df['bid_ask_pct'] = (df['ask']/df['bid'] - 1)
+    df['bid_ask_rank'] = (df.groupby('stock')['bid_ask_pct']
+                          .rank(pct=True, ascending=False, method='dense'))
+    df['open_int_rank'] = (df.groupby('stock')['openInterest']
+                           .rank(pct=True, ascending=True, method='dense'))
+    df['volume_rank'] = (df.groupby('stock')['totalVolume']
+                         .rank(pct=True, ascending=True, method='dense'))
+
+    if premium_type == 'credit':
+        df['max_profit'] = df['mark'] * df['multiplier']
+        df['risk'] = df['strikePrice'] * df['multiplier'] - df['max_profit']
+        df['return'] = df['max_profit'] / df['risk']
+        df['return_day'] = df['return'] / (df['daysToExpiration'] + .00001)
+    else:
+        df['max_profit'] = "infinite"
+        df['risk'] = df['mark'] * df['multiplier']
+        df['return'] = "infinite"
+        df['return_day'] = "infinite"
+
+    df['quantity'] = max_risk / df['risk']
     df['search'] = \
         df['description'].str.split(' ').str[0].astype(str) + " " + \
         df['description'].str.split(' ').str[2].astype(str) + " " + \
         df['description'].str.split(' ').str[1].astype(str) + " " + \
         df['description'].str.split(' ').str[3].str[::3].astype(str) + \
         " (" + df['daysToExpiration'].astype(str) + ") " + \
-        df['putCall'].astype(str) + " " + \
+        df['option_type'].astype(str) + " " + \
         df['strikePrice'].astype(str)
 
-    # df3 will be used only in the register below, along with df2
-    df3 = df.copy()
-
     # more filters
-    df = df[df['bid_ask_pct'] <= max_bid_ask_pct]
-    df = df[df['risk'] <= max_risk]
-    df = df[df['return'] >= min_return_pct]
-    df = df[df['risk'] >= df['max_profit']]
+    df = df[df['bid_ask_rank'] >= max_bid_ask_pctl]
+    impact['Bid/Ask'] = f"{df.shape[0] / _shp:.0%}"
 
-    # Register to capture the impact of the filters on the database
-    register = {
-        'Original Options Available': f'{df2.shape[0]}',
-        'Option type': '{:.0f}% {}'.format(
-            df2[df2['putCall'].str.lower() == option_type
-                ].shape[0] / df2.shape[0] * 100, option_type),
-        'Days to expiration': '{:.0f}%'.format(
-            df2[(df2['daysToExpiration'] >= min_dte) &
-                (df2['daysToExpiration'] <= max_dte)
-                ].shape[0] / df2.shape[0] * 100),
-        'Option ITM': '{:.0f}%'.format(
-            df2[df2['inTheMoney'] == option_itm
-                ].shape[0] / df2.shape[0] * 100),
-        'Price': '{:.0f}%'.format(
-            df2[(df2['strikePrice'] >= min_price) &
-                (df2['strikePrice'] <= max_price)
-                ].shape[0] / df2.shape[0] * 100),
-        'Open Interest': '{:.0f}%'.format(
-            df2[df2['openInterest'] >= min_open_int
-                ].shape[0] / df2.shape[0] * 100),
-        'Volume': '{:.0f}%'.format(
-            df2[df2['totalVolume'] >= min_volume
-                ].shape[0] / df2.shape[0] * 100),
-        'Delta': '{:.0f}%'.format(
-            df2[(df2['delta'] <= max_delta) &
-                (df2['delta'] >= -max_delta)
-                ].shape[0] / df2.shape[0] * 100),
-        'Bid Ask ratio (pctl)': '{:.0f}%'.format(
-            df3[df3['bid_ask_pct'] <= max_bid_ask_pct
-                ].shape[0] / df3.shape[0] * 100),
-        'Risk': '{:.0f}%'.format(
-            df3[df3['risk'] <= max_risk
-                ].shape[0] / df3.shape[0] * 100),
-        'Return': '{:.0f}%'.format(
-            df3[df3['return'] >= min_return_pct
-                ].shape[0] / df3.shape[0] * 100)
-    }
-    del df2, df3
+    df = df[df['open_int_rank'] >= min_open_int_pctl]
+    impact['Open Interest'] = f"{df.shape[0] / _shp:.0%}"
+
+    df = df[df['volume_rank'] >= min_volume_pctl]
+    impact['Volume'] = f"{df.shape[0] / _shp:.0%}"
+
+    df = df[df['risk'] <= max_risk]
+    impact['Risk'] = f"{df.shape[0] / _shp:.0%}"
+
+    if premium_type == 'credit':
+        df = df[df['return'] >= min_return_pct]
+    impact['Return'] = f"{df.shape[0] / _shp:.0%}"
+
+    if premium_type == 'credit':
+        df = df[df['risk'] >= df['max_profit']]
+    impact['Risk>Profit'] = f"{df.shape[0] / _shp:.0%}"
 
     # exit if table is empty
     if len(df.index) == 0:
         st.warning("**Nothing to see here!** Criteria not met")
         st.write("**Here's the impact of the filters you've set:**")
-        register_df = pd.DataFrame({'Filter': k, '% of Total': v} for k, v in register.items())
-        register_df = register_df.set_index('Filter')
-        st.table(register_df)
+        st.table(pd.DataFrame(impact.items(), ['Filter', '% of Total'])
+                   .set_index('Filter'))
         return
 
     # there are no calculations here; as opposed to spread hacker, because
     # the premium is just the bid price.
 
     # Formatting the table
-    df.sort_values(by='return', ascending=False, inplace=True)
-    df.drop(columns=['symbol'], inplace=True)
-    df.reset_index(inplace=True)
-    # df.set_index('symbol', inplace=True)
+    if premium_type == 'credit':
+        df.sort_values(by='return', ascending=False, inplace=True)
+    else:
+        df.sort_values(by='risk', ascending=True, inplace=True)
     df.set_index('search', inplace=True)
 
-    # cols = ['stock', 'option_type', 'strikePrice', 'daysToExpiration',
-    #         'bid', 'mark', 'delta', 'volatility', 'max_profit', 'risk',
-    #         'return', 'return_day', 'search']
-    # df = df[cols]
-    # df.rename(columns={'option_type': 'type',
-    #                    'strikePrice': 'strike',
-    #                    'daysToExpiration': 'dte',
-    #                    'volatility': 'vol'},
-    #           inplace=True)
-    cols = ['return', 'return_day', 'max_profit', 'risk', 'mark',
-            'delta', 'volatility', 'daysToExpiration', 'stock']
-    df = df[cols]
+    _cols = [
+        'return',
+        'return_day',
+        'max_profit',
+        'risk',
+        'quantity',
+        'mark',
+        'delta',
+        'volatility',
+        'daysToExpiration',
+        'stock'
+    ]
+    df = df[_cols]
 
-    # df['mark'] = df['mark'].map("{:,.2f}".format)
-    # #    df['bid'] = df['bid'].map("${:,.2f}".format)
-    # df['daysToExpiration'] = df['daysToExpiration'].map("{:#}".format)
-    # df['volatility'] = df['volatility'].map("{:,.2f}".format)
-    # df['delta'] = df['delta'].map("{:,.2f}".format)
-    # df['max_profit'] = df['max_profit'].map("{:,.2f}".format)
-    # df['return'] = df['return'].map("{0:.2f}".format)
-    # df['return_day'] = df['return_day'].map("{0:.2f}".format)
-    # # df['risk'] = df['risk'].map("{:,.2f}".format)
-
-    df.round({
-        'return': 2,
-        'return_day': 2,
-        'max_profit': 2,
-        'risk': 2,
-        'mark': 2,
-        'delta': 2,
-        'volatility': 0
-    })
-
-    df.rename(columns={
+    _cols = {
         'daysToExpiration': 'DTE',
         'mark': 'Mark',
         'delta': 'Delta',
         'volatility': 'IV',
         'max_profit': 'Max Profit',
         'risk': 'Risk',
+        'quantity': 'Qty',
         'return': 'Return',
         'return_day': 'Daily Return',
-    },
-        inplace=True
-    )
+    }
+    df = df.rename(columns=_cols)
+
+    # display results
+    df_print = (df.style.background_gradient(
+                    axis=0,
+                    subset=['Return', 'Daily Return', 'IV'])
+                  .highlight_max(
+                    subset=['Return', 'Max Profit', 'IV', 'Daily Return'],
+                    color=fm.HI_MAX_COLOR)
+                  .highlight_min(
+                    subset=['Return', 'Max Profit', 'IV', 'Daily Return'],
+                    color=fm.HI_MIN_COLOR)
+                  .format({
+                    'Return': fm.FMT_PERCENT2,
+                    'Daily Return': fm.FMT_PERCENT2,
+                    'Max Profit': fm.FMT_DOLLAR,
+                    'Risk': fm.FMT_DOLLAR,
+                    'Qty': fm.FMT_INTEGER + "x",
+                    'Mark': fm.FMT_DOLLAR,
+                    'Delta': fm.FMT_FLOAT,
+                    'IV': fm.FMT_INTEGER
+                  })
+                )
+
+    st.dataframe(data=df_print)
 
     # output
     return df

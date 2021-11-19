@@ -8,9 +8,7 @@ How to use FyBot in 3 seconds:
     2. Use your app
     A new tab will open on your browser. That's your FyBot app!
 
-For more detailed info, see https://github.com/juanlazarde/fybot
+For more detailed info, see <https://github.com/juanlazarde/fybot>
 """
-
-# from .__main__ import *
-# version major, minor, micro, release, serial
-__version__ = "1.0.1.alpha.0"
+from .version import __version__, ___author__
+__import__('pkg_resources').declare_namespace(__name__)

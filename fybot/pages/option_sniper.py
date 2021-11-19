@@ -1,31 +1,22 @@
+from typing import Tuple, Union
 
-
+import pandas as pd
 import streamlit as st
 
-from core.utility import Watchlist
-from core.settings import S
 import core.option_sniper as osn
+from core.settings import S
+from core.utils import Watchlist
 
 
-@st.cache
-def export_results(strategy: str, df: any, path: str):
+def export_results(strategy: str, df: pd.DataFrame, path: str) -> None:
     """Exports the resulting table.
 
-    Parameters
-    ----------
-    strategy : str
-        Name of the straegy being exported
-    df :
-        Each strategy has a dataframe.
-    path : str
-        Path where file will be saved.
-
-    Returns
-    -------
-    Nothing
+    :param strategy: Name of the straegy being exported.
+    :param df: Each strategy has a dataframe.
+    :param path: Path where file will be saved.
     """
     from datetime import datetime
-    from core.utility import fix_path
+    from core.utils import fix_path
 
     suffix = datetime.now().strftime("%y%m%d_%H%M%S")
     name = fix_path(f"{path}{strategy}_hacker_{suffix}.csv")
@@ -39,13 +30,10 @@ def export_results(strategy: str, df: any, path: str):
 
 def load_profiles():
     """Loads and returns the profiles available.
-    # TODO: load profiles in dictionary form from the database
 
-    Returns
-    -------
-    tuple
-        Profile names and corresponding dictionaries.
+    :returns: Profile names and corresponding dictionaries.
     """
+    # TODO: load profiles in dictionary form from the database
     profiles = {"Default": S.OPTION_SNIPER,
                 "Credit Naked Options": S.OPTION_SNIPER,
                 "Credit Vertical Spreads": S.OPTION_SNIPER,
@@ -54,15 +42,17 @@ def load_profiles():
     return profile_names, profiles
 
 
-def save_profile(profile_name, params, profiles):
+def save_profile(profile_name: str,
+                 params: dict,
+                 profiles: dict) -> Union[Tuple[bool, None, dict], bool]:
     """Saves profile with selected parameters.
-    # TODO: save profiles in dictionary form into the database
 
-    Returns
-    -------
-    bool
-        True if successful, False otherwise.
+    :param profile_name: Name of the new profile.
+    :param params: Dictionary with parameters as input.
+    :param profiles: Dictionary with all profiles saved.
+    :returns: True if successful, False otherwise.
     """
+    # TODO: save profiles in dictionary form into the database
     if profile_name in profiles.keys():
         return False, None, profiles
     profiles[profile_name] = params
@@ -82,19 +72,33 @@ def app():
     params = profiles[selected]
 
     # Watchlist to load default values on form.
+    if 'wtc_sel' in st.session_state:
+        if st.session_state['wtc_sel'] == st.session_state['wtc_latest']:
+            st.session_state['wtc_latest'] = st.session_state['wtc_text']
+        else:
+            st.session_state['wtc_latest'] = st.session_state['wtc_sel']
+    if 'wtc_latest' in st.session_state:
+        if len(st.session_state['wtc_latest']) > 0:
+            params['WATCHLIST']['watchlist_current'] = \
+                st.session_state['wtc_latest']
+            params['WATCHLIST']['selected'] = \
+                list(params['WATCHLIST'].keys()).index('watchlist_current')
+
     _watchlist = [', '.join(Watchlist.sanitize(params['WATCHLIST'][k]))
                   for k in params['WATCHLIST']
                   if 'watchlist_' in k]
-    if params['WATCHLIST']['watchlist_current'] == '':
-        _index = params['WATCHLIST']['selected']
-    else:
-        _index = list(params['WATCHLIST'].keys()).index('watchlist_current')
-    watchlist = st.sidebar.selectbox(
+
+    # if params['WATCHLIST']['watchlist_current'] != '':
+    #     params['WATCHLIST']['selected'] = \
+    #         list(params['WATCHLIST'].keys()).index('watchlist_current')
+    params['WATCHLIST']['watchlist_current'] = st.sidebar.selectbox(
         label="Choose a watchlist",
         options=_watchlist,
-        index=_index,
-        help="Watchlists saved in the profile"
+        index=params['WATCHLIST']['selected'],
+        help="Watchlists saved in the profile.",
+        key='wtc_sel'
     )
+    st.session_state['wtc_latest'] = st.session_state['wtc_sel']
 
     # Refresh button
     if st.sidebar.button("Refresh data"):
@@ -148,10 +152,11 @@ def app():
         # Symbols to analyze
         params['WATCHLIST']['watchlist_current'] = st.text_input(
             label="Symbols to analyze",
-            value=watchlist,
-            help="List of stocks to analyze separated by comma"
+            value=params['WATCHLIST']['watchlist_current'],
+            help="List of stocks to analyze separated by comma",
+            key='wtc_text',
         )
-        params['WATCHLIST']['selected'] = list(params['WATCHLIST'].keys()).index('watchlist_current')
+        st.session_state['wtc_latest'] = st.session_state['wtc_text']
 
         # Filtering
         with st.expander(label="Symbol filters", expanded=False):
@@ -163,7 +168,7 @@ def app():
                 max_value=1000000.00,
                 step=1.00,
                 value=float(params['FILTERS']['min_price']),
-                help="Analyze symbols with a price greater or equal to this number"
+                help="Analyze symbols with a price >= to this number"
             )
 
             # Price maximum
@@ -173,17 +178,20 @@ def app():
                 max_value=1000000.00,
                 step=1.00,
                 value=float(params['FILTERS']['max_price']),
-                help="Analyze symbols with a price less than or equal to this number"
+                help="Analyze symbols with a price <=  to this number"
             )
 
         # Formating
         col1, col2, col3 = st.columns([1, 1, 1])
 
         # Premium type: credit or debit
-        _index = 0 if params['FILTERS']['premium'] == 'credit' else 1
-        params['FILTERS']['premium'] = col1.selectbox(
+        _index = 0 if params['FILTERS']['premium_type'] == 'credit' else 1
+        params['FILTERS']['premium_type'] = col1.selectbox(
             label="Premium type",
-            options=['credit', 'debit'],
+            options=[
+                'credit',
+                # 'debit'
+            ],
             help="Credit to collect premium or Debit to pay premium",
             index=_index,
         )
@@ -196,7 +204,10 @@ def app():
             _default = st.session_state['strategy_selected']
         strategy = col1.multiselect(
             label="Option Strategy(ies)",
-            options=['naked', 'spread'],
+            options=[
+                'naked',
+                # 'spread'
+            ],
             default=_default,
             help="Strategies to be analyzed, i.e. naked, spread, condor",
             key="strategy_selected",
@@ -267,19 +278,11 @@ def app():
                 max_value=5000.0,
                 step=0.1,
                 value=float(params['FILTERS']['strike_price_spread']),
-                help="How wide is the minimum price spread for spread strategy. "
+                help="Maximum price spread for spread strategy. "
                      "Larger spread menas larger capital required"
             )
 
-        # Delta maximum & minimum
-        params['FILTERS']['min_delta'] = col3.number_input(
-            label="Delta minimum",
-            min_value=0.00,
-            max_value=1.00,
-            step=0.01,
-            value=float(params['FILTERS']['min_delta']),
-            help="Minimum Delta for the option"
-        )
+        # Delta maximum
         params['FILTERS']['max_delta'] = col3.number_input(
             label="Delta maximum",
             min_value=0.00,
@@ -290,29 +293,31 @@ def app():
         )
 
         # Volume, Open Interest, bid/ask percentile
-        params['FILTERS']['min_volume'] = col3.number_input(
-            label="Volume minimum",
-            min_value=0.,
-            max_value=100000000.,
-            step=1.,
-            value=float(params['FILTERS']['min_volume']),
-            help="Volume transactions minimum"
-        )
-        params['FILTERS']['min_open_int'] = col3.number_input(
-            label="Open Interest minimum",
+        params['FILTERS']['min_volume_pctl'] = col3.number_input(
+            label="Volume percentile",
             min_value=0.,
             max_value=100.,
             step=1.,
-            value=float(params['FILTERS']['min_open_int']),
-            help="Open Interest demand minimum"
+            value=float(params['FILTERS']['min_volume_pctl']),
+            help="Volume transactions minimum (larger number = more liquid)."
+                 "Further out options are less liquid."
         )
-        params['FILTERS']['max_bid_ask_pct'] = col3.number_input(
-            label="Bid/Ask ratio maximum",
+        params['FILTERS']['min_open_int_pctl'] = col3.number_input(
+            label="Open Interest percentile",
+            min_value=0.,
+            max_value=100.,
+            step=1.,
+            value=float(params['FILTERS']['min_open_int_pctl']),
+            help="Open Interest demand minimum (larger number = more liquid)."
+                 "Further out options are less liquid."
+        )
+        params['FILTERS']['max_bid_ask_pctl'] = col3.number_input(
+            label="Bid/Ask spread percentile",
             min_value=0.01,
             max_value=100.00,
             step=0.01,
-            value=float(params['FILTERS']['max_bid_ask_pct']),
-            help="Bid/Ask ratio, maximum allowed in percent (Smaller value means liquid. Ask/Bid-1)"
+            value=float(params['FILTERS']['max_bid_ask_pctl']),
+            help="Maximum Bid/Ask spread (larger number = more liquid)."
         )
 
         # Submit to run Option Sniper script
@@ -320,20 +325,11 @@ def app():
         hunt = st.form_submit_button("Snipe")
         if hunt:
             with st.spinner("Seeking target..."):
-                # nested_df is a dictionary, where key is stratey, value is the DF
+                # nested_df is a dictionary. Key is stratey, Value is the DF
                 nested_df = osn.snipe(params)
-
-                for k in nested_df:
-                    if nested_df[k] is not None:
-                        df = nested_df[k]
-                        df = df.sort_values(by="Return", ascending=False)
-                        df = df.style.background_gradient(
-                            axis=0,
-                            subset=['Return', 'Daily Return', 'IV']
-                        )
-                        st.dataframe(data=df)
-
-                        if params['DEBUG']['export']:
+                if params['DEBUG']['export']:
+                    for k in nested_df:
+                        if nested_df[k] is not None:
                             export_results(
                                 strategy=k,
                                 df=nested_df[k],
