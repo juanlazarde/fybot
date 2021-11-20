@@ -5,7 +5,7 @@ import streamlit.cli as cli
 import logging
 from logging.config import fileConfig
 
-from core.settings import S
+import core.settings as ss
 
 
 def _create_table():
@@ -81,7 +81,7 @@ def _error_handling(error: Exception or str) -> None:
 
 
 if __name__ == '__main__':
-    fileConfig(S.LOGGING_FILE, disable_existing_loggers=False)
+    fileConfig(ss.LOGGING_FILE, disable_existing_loggers=False)
     log = logging.getLogger(__name__)
 
     # 'python fybot create_table' to create the PostgresSQL tables.

@@ -7,10 +7,10 @@ import talib
 from lxml import html # noqa
 from time import time as t
 
-from core.patterns import candlestick_patterns
-from core.settings import S
+from core.scanner.patterns import candlestick_patterns
+import core.settings as ss
 from core.database import Database
-import core.snp as sn
+import core.scanner as sn
 
 log = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class Signals:
         s = t()
 
         # loading filter settings
-        self.filters = filters if filters is not None else S.DEFAULT_FILTERS
+        self.filters = filters if filters is not None else ss.DEFAULT_FILTERS
 
         # loading price history data
         _symbols = symbols if symbols is not None else sn.GetAssets().symbols
@@ -278,12 +278,12 @@ class File(Signals):
     def load():
         # read price data and format
 
-        price_data = pd.read_pickle(S.PRICE_FILE)
+        price_data = pd.read_pickle(ss.PRICE_FILE)
         log.info("Filter is reading price data from the file")
         return price_data
 
     def save_to_file(self):
         """Save signal table to pickle file"""
 
-        self.signal.to_pickle(S.SIGNALS_FILE)
+        self.signal.to_pickle(ss.SIGNALS_FILE)
         log.info("Saved signal table to pickle file")

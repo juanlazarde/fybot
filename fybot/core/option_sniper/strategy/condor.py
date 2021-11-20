@@ -10,10 +10,10 @@ pd.set_option('display.max_columns', 500)
 pd.set_option('display.width', 1000)
 
 
-def calculate_cdistance_1d(df1, df2, metric='cityblock'):
+def calculate_cdistance_1d(df1, df2):
     XA = df1.values.reshape((-1, 1))
     XB = df2.values.reshape((-1, 1))
-    df = pd.DataFrame(cdist(XB, XA, metric), index=df1.index,
+    df = pd.DataFrame(cdist(XB, XA, 'cityblock'), index=df1.index,
                       columns=df2.index)
     return df
 
@@ -157,7 +157,7 @@ def condor(df, filters):
     # ------- Filter options source data before cross-calculation
     if len(df.index) == 0:
         exit("No options tables to analyze")
-    df = df[df['inTheMoney'] == False]
+    df = df[(df['inTheMoney'] is False)]
     df = df[df['openInterest'] >= min_open_int_pctl]
     df = df[df['bidSize'] >= min_bid_size]
     df = df[df['askSize'] >= min_ask_size]
@@ -169,12 +169,12 @@ def condor(df, filters):
         divider()
         return
 
-    # ---------- pre-calculate verticals for puts and calls, iterate in df by DTE
+    # -------- pre-calculate verticals for puts and calls, iterate in df by DTE
 
     all_condors = {}
 
     days_to_expiration_list = df['daysToExpiration'].unique()
-    days_to_expiration_list[days_to_expiration_list < max_dte]
+    # days_to_expiration_list[days_to_expiration_list < max_dte]
 
     for dte in days_to_expiration_list:
         df_in = df[df['daysToExpiration'] == dte]
@@ -188,8 +188,8 @@ def condor(df, filters):
 
         df_in = df_in.loc[stock_list]
 
-        # ---------- pre-calculate verticals for puts and calls and store in dict
-        # ---------- create condors, cross-join verticals by stock and join
+        # -------- pre-calculate verticals for puts and calls and store in dict
+        # -------- create condors, cross-join verticals by stock and join
 
         pre_condor_dict = hack_bid_ask_spreads_put_call(df_in)
 

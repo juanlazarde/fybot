@@ -1,5 +1,10 @@
-"""Encrypte TDA Account using account Key"""
+"""Encrypt TDA Account using account Key
 
+This module will encrypt the text using a Secret Key file in your hard drive.
+The purpose of the key file is so that you don't have to type a password.
+If the Secret Key file doensn't exist, it will be created for you.
+The path and name for the file is defined in the Settings.py. SECRET_KEY_FILE
+"""
 import streamlit as st
 from core.encryption import Encryption
 
@@ -11,6 +16,13 @@ def app():
     plain_text = st.text_input("Plain Account Number")
     if not plain_text:
         st.warning("Input your text to be encrypted")
+        st.markdown(
+            "*More Info*  \n"
+            "Encrypts text using a Secret Key file in your hard drive.  \n"
+            "The key file is so that you don't have to type a password.  \n"
+            "If the key file doesn't exist, it will be created for you.  \n"
+            "Filename is defined in the `settings.py`: SECRET_KEY_FILE"
+        )
         st.stop()
 
     secret = Encryption().encrypt(plain_text).decode('ascii')

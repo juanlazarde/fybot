@@ -1,5 +1,5 @@
 """Config to process dictionary incoming from the form."""
-from core.option_sniper.utility import fix_path
+from core.utils import fix_path
 
 
 def normalize_configuration(opt: dict):
@@ -47,5 +47,5 @@ def main(parameters: dict):
 
 
 if __name__ == '__main__':
-    from core.settings import S
-    print(main(parameters=S.OPTION_SNIPER))
+    import core.settings as ss
+    print(main(parameters=ss.OPTION_SNIPER))

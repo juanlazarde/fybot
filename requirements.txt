@@ -20,7 +20,6 @@ streamlit
 ta
 tda-api
 yahooquery
-yahooquery
 yfinance
 
 ipython

@@ -1,7 +1,7 @@
 import logging
 from time import time as t
 
-import core.snp as sn
+import core.scanner as sn
 
 log = logging.getLogger(__name__)
 
@@ -35,9 +35,9 @@ def refresh_data(forced: bool = False, save_to_file: bool = False):
 
 if __name__ == '__main__':
     from logging.config import fileConfig
-    from core.settings import S
+    import core.settings as ss
 
-    fileConfig(S.LOGGING_FILE, disable_existing_loggers=False)
+    fileConfig(ss.LOGGING_FILE, disable_existing_loggers=False)
     log = logging.getLogger(__name__)
 
     # save_files()

@@ -14,8 +14,8 @@ import yfinance as yf
 def app():
     yf.pdr_override()
 
+    st.title('Technical Analysis Web Application')
     st.write("""
-    # Technical Analysis Web Application
     Shown below are the **Moving Average Crossovers**, **Bollinger Bands**, 
     **MACD's**, **Commodity Channel Indexes**, **Relative Strength Indexes** 
     and **Extended Market Calculators** of any stock!
@@ -23,15 +23,13 @@ def app():
 
     st.sidebar.header('User Input Parameters')
 
-    today = datetime.date.today()
-
-    def user_input_features():
-        ticker = st.sidebar.text_input("Ticker", 'AAPL')
-        start_date = st.sidebar.text_input("Start Date", '2019-01-01')
-        end_date = st.sidebar.text_input("End Date", f'{today}')
-        return ticker, start_date, end_date
-
-    symbol, start, end = user_input_features()
+    symbol = st.sidebar.text_input("Ticker", 'AAPL')
+    start = st.sidebar.date_input(
+        label="Start Date",
+        value=datetime.date(2018, 1, 1))
+    end = st.sidebar.date_input(
+        label="End Date",
+        value=datetime.date.today())
 
     symbol = symbol.upper()
     start = pd.to_datetime(start)
@@ -52,43 +50,69 @@ def app():
 
     # ## SMA and EMA
     # Simple Moving Average
-    data['SMA'] = talib.SMA(data['Adj Close'], timeperiod=20)
+    data['SMA'] = talib.SMA(
+        data['Adj Close'],
+        timeperiod=20)
 
     # Exponential Moving Average
-    data['EMA'] = talib.EMA(data['Adj Close'], timeperiod=20)
+    data['EMA'] = talib.EMA(
+        data['Adj Close'],
+        timeperiod=20)
 
     # Plot
     st.header(f"""
               Simple Moving Average vs. Exponential Moving Average\n {symbol}
               """)
-    st.line_chart(data[['Adj Close', 'SMA', 'EMA']])
+    st.line_chart(
+        data[[
+            'Adj Close',
+            'SMA',
+            'EMA'
+        ]])
 
     # Bollinger Bands
     data['upper_band'], data['middle_band'], data['lower_band'] = talib.BBANDS(
-        data['Adj Close'], timeperiod=20)
+        data['Adj Close'],
+        timeperiod=20)
 
     # Plot
     st.header(f"""
               Bollinger Bands\n {symbol}
               """)
     st.line_chart(
-        data[['Adj Close', 'upper_band', 'middle_band', 'lower_band']])
+        data[[
+            'Adj Close',
+            'upper_band',
+            'middle_band',
+            'lower_band'
+        ]])
 
     # ## MACD (Moving Average Convergence Divergence)
     # MACD
     data['macd'], data['macdsignal'], data['macdhist'] = talib.MACD(
-        data['Adj Close'], fastperiod=12, slowperiod=26, signalperiod=9)
+        data['Adj Close'],
+        fastperiod=12,
+        slowperiod=26,
+        signalperiod=9)
 
     # Plot
     st.header(f"""
               Moving Average Convergence Divergence\n {symbol}
               """)
-    st.line_chart(data[['macd', 'macdsignal']])
+    st.line_chart(
+        data[[
+            'macd',
+            'macdsignal'
+        ]])
 
     # ## CCI (Commodity Channel Index)
     # CCI
-    cci = ta.trend.cci(data['High'], data['Low'], data['Close'], window=31,
-                       constant=0.015)
+    cci = ta.trend.cci(
+        data['High'],
+        data['Low'],
+        data['Close'],
+        window=31,
+        constant=0.015)
 
     # Plot
     st.header(f"""
@@ -98,7 +122,9 @@ def app():
 
     # ## RSI (Relative Strength Index)
     # RSI
-    data['RSI'] = talib.RSI(data['Adj Close'], timeperiod=14)
+    data['RSI'] = talib.RSI(
+        data['Adj Close'],
+        timeperiod=14)
 
     # Plot
     st.header(f"""
@@ -108,7 +134,9 @@ def app():
 
     # ## OBV (On Balance Volume)
     # OBV
-    data['OBV'] = talib.OBV(data['Adj Close'], data['Volume']) / 10 ** 6
+    data['OBV'] = talib.OBV(
+        data['Adj Close'],
+        data['Volume']) / 10 ** 6
 
     # Plot
     st.header(f"""
@@ -123,8 +151,6 @@ def app():
     sma = 50
     limit = 10
 
-    data = yf.download(symbol, start, today)
-
     # calculates sma and creates a column in the dataframe
     data['SMA' + str(sma)] = data.iloc[:, 4].rolling(window=sma).mean()
     data['PC'] = ((data["Adj Close"] / data['SMA' + str(sma)]) - 1) * 100
@@ -134,12 +160,16 @@ def app():
     current = round(data["PC"][-1], 2)
     yday = round(data["PC"][-2], 2)
 
-    stats = [['Mean', mean], ['Standard Deviation', stdev],
-             ['Current', current],
-             ['Yesterday', yday]]
+    stats = [
+        ['Mean', mean],
+        ['Standard Deviation', stdev],
+        ['Current', current],
+        ['Yesterday', yday]
+    ]
 
-    frame = pd.DataFrame(stats,
-                         columns=['Statistic', 'Value'])
+    frame = pd.DataFrame(
+        stats,
+        columns=['Statistic', 'Value'])
 
     st.header(f"""
               Extended Market Calculator\n {symbol}

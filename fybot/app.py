@@ -9,7 +9,7 @@ Cheat sheet
 import streamlit as st
 
 import pages
-from core.settings import S
+import core.settings as ss
 
 # Streamlit Configuration
 PAGE_TITLE = "Financial Scanner"
@@ -41,7 +41,7 @@ def main():
             'About': MENU_ABOUT
         }
     )
-    st.sidebar.markdown(f"Hi, **{S.USER_NAME}**")
+    st.sidebar.markdown(f"Hi, **{ss.USER_NAME}**")
     st.sidebar.title('Navigation')
     selection = st.sidebar.selectbox(
         label="Make a selection:",

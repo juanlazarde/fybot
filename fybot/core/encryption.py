@@ -6,38 +6,39 @@ import sys
 
 from cryptography.fernet import Fernet
 
-from core.settings import S
+import core.settings as ss
 
 
 class Encryption:
     cipher_suite = None
 
-    def __init__(self, password=''):
+    def __init__(self, password: str = ''):
         """Encryption process using 'cryptography' package.
 
-         Use:
+         Usage::
+
              crypto = Encryption(password='tothemoon')
              secret = crypto.encrypt('secret message')
              revealed = crypto.decrypt('mm432kl4m32')
              If no password is used, then it reads the key file.
              If no key file is present, it creates one.
 
-         :param str password: Password, otherwise it will read it from key file
+         :param password: Password, otherwise it will read it from key file
          """
 
         # name of file with key
-        if password.strip() != '':
+        if len(password.strip()) == 0:
             key = password.strip()
         else:
-            key = self.create_save_key_file(S.SECRET_KEY_FILE)
+            key = self.create_save_key_file(ss.SECRET_KEY_FILE)
         self.cipher_suite = Fernet(key)
 
     @staticmethod
-    def create_save_key_file(filename):
+    def create_save_key_file(filename: str):
         """Generate or load Key and save it in file.
 
-        :param str filename: path and file name to key file
-        :return key: encypting key
+        :param filename: path and file name to key file
+        :return: encypting key
         """
 
         if os.path.isfile(filename):
@@ -66,11 +67,14 @@ class Encryption:
         """Writes an 'encrypted.txt' file to the root folder with the
         message, then opens it for you to copy/paste.
 
-        Use:
-            Encryption(password='1234').save_encrypted_to_text_file('message')
-        * Password (optional) if empty/None, it reads the key file
+        Usage::
 
-        :param str message: Plain text to be encrypted"""
+            Encryption(password='1234').save_encrypted_to_text_file('message')
+
+            * Password (optional) if empty/None, it reads the key file
+
+        :param message: Plain text to be encrypted
+        """
 
         secret = self.encrypt(message).decode('ascii')
 

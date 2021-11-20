@@ -6,7 +6,7 @@ import psycopg2.extras
 import pytz
 import logging
 
-from core.settings import S
+import core.settings as ss
 
 log = logging.getLogger(__name__)
 
@@ -16,10 +16,10 @@ class Database:
 
     def __init__(self):
         try:
-            self._conn = psycopg2.connect(host=S.DB_HOST,
-                                          database=S.DB_NAME,
-                                          user=S.DB_USER,
-                                          password=S.DB_PASSWORD)
+            self._conn = psycopg2.connect(host=ss.DB_HOST,
+                                          database=ss.DB_NAME,
+                                          user=ss.DB_USER,
+                                          password=ss.DB_PASSWORD)
             self._cursor = self.connection.cursor(
                 cursor_factory=psycopg2.extras.DictCursor)
         except Exception as e:

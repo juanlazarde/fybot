@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 
 import core.option_sniper as osn
-from core.settings import S
+import core.settings as ss
 from core.utils import Watchlist
 
 
@@ -34,9 +34,9 @@ def load_profiles():
     :returns: Profile names and corresponding dictionaries.
     """
     # TODO: load profiles in dictionary form from the database
-    profiles = {"Default": S.OPTION_SNIPER,
-                "Credit Naked Options": S.OPTION_SNIPER,
-                "Credit Vertical Spreads": S.OPTION_SNIPER,
+    profiles = {"Default": ss.OPTION_SNIPER,
+                "Credit Naked Options": ss.OPTION_SNIPER,
+                "Credit Vertical Spreads": ss.OPTION_SNIPER,
                 }
     profile_names = list(profiles.keys())
     return profile_names, profiles
@@ -333,5 +333,5 @@ def app():
                             export_results(
                                 strategy=k,
                                 df=nested_df[k],
-                                path=S.DATASET_DIR
+                                path=ss.DATASET_DIR
                             )

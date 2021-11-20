@@ -11,9 +11,9 @@ import pytz
 import logging
 
 from core.database import Database
-from core.settings import S
-import core.filters as fl
-import core.snp as sn
+import core.settings as ss
+import core.scanner.filters as fl
+import core.scanner as sn
 
 log = logging.getLogger()
 
@@ -78,11 +78,11 @@ class Scan:
 
 class File(Scan):
     def load(self):
-        self.signals = pd.read_pickle(S.SIGNALS_FILE)
-        log.debug(f"Signal tables loaded from file: {S.SIGNALS_FILE}")
+        self.signals = pd.read_pickle(ss.SIGNALS_FILE)
+        log.debug(f"Signal tables loaded from file: {ss.SIGNALS_FILE}")
         return self.symbols, self.signals
 
     @staticmethod
     def get_timestap():
-        if os.path.isfile(S.PRICE_FILE):
-            return os.stat(S.PRICE_FILE).st_mtime
+        if os.path.isfile(ss.PRICE_FILE):
+            return os.stat(ss.PRICE_FILE).st_mtime

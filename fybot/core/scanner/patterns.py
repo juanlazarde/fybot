@@ -34,7 +34,7 @@ candlestick_patterns = {
     'CDLINNECK': 'In-Neck Pattern',
     'CDLINVERTEDHAMMER': 'Inverted Hammer',
     'CDLKICKING': 'Kicking',
-    'CDLKICKINGBYLENGTH': 'Kicking - bull/bear determined by the longer marubozu',
+    'CDLKICKINGBYLENGTH': 'Kicking - bull/bear by the longer marubozu',
     'CDLLADDERBOTTOM': 'Ladder Bottom',
     'CDLLONGLEGGEDDOJI': 'Long Legged Doji',
     'CDLLONGLINE': 'Long Line Candle',

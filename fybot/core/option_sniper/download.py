@@ -23,7 +23,7 @@ def get_all_tables(tda_client,
         Dataframe with Option Chains. Blank if market is closed.
     """
     # TODO: Filter out stocks by underlying price
-    st.write(f"Loading Tables between {min_dte:%b-%d-%Y} & {max_dte:%b-%d-%Y} for:")
+    st.write(f"Tables between {min_dte:%b-%d-%Y} & {max_dte:%b-%d-%Y} for:")
     options_df = None
     options = {}
     for symbol in symbol_list:

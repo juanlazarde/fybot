@@ -7,7 +7,7 @@ import logging
 from tda.auth import easy_client as tda_connection
 from tda.streaming import StreamClient
 
-from core.settings import S
+import core.settings as ss
 from core.encryption import Encryption
 
 log = logging.getLogger(__name__)
@@ -22,9 +22,9 @@ class TDA:
         :param asyncio_bool: If True TDA runs in Asyncio mode
         """
 
-        API_KEY = S.TDA_API_KEY
-        REDIRECT_URL = S.TDA_REDIRECT_URI
-        TOKEN = S.TDA_TOKEN
+        API_KEY = ss.TDA_API_KEY
+        REDIRECT_URL = ss.TDA_REDIRECT_URI
+        TOKEN = ss.TDA_TOKEN
 
         try:
             self.client = tda_connection(api_key=API_KEY,
@@ -95,7 +95,7 @@ class TDA:
 class TDAstream(TDA):
     def tda_stream(self, symbol: str):
         client = self.client
-        account_id = int(Encryption().decrypt(S.TDA_ACCOUNT_E))
+        account_id = int(Encryption().decrypt(ss.TDA_ACCOUNT_E))
         stream_client = StreamClient(client, account_id=account_id)
 
         async def read_stream(s):
@@ -119,7 +119,7 @@ class TDAstream(TDA):
 if __name__ == '__main__':
     from logging.config import fileConfig
 
-    fileConfig(S.LOGGING_FILE, disable_existing_loggers=False)
+    fileConfig(ss.LOGGING_FILE, disable_existing_loggers=False)
     log = logging.getLogger(__name__)
 
     con = TDA()

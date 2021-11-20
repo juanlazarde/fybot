@@ -36,7 +36,10 @@ class GetOptions:
     def market_is_open():
         """Return True or False whether the market is open or not."""
         current_weekday = date.today().weekday()
-        current_time = datetime.now().astimezone(timezone(timedelta(hours=-5))).time()
+        current_time = (datetime
+                        .now()
+                        .astimezone(timezone(timedelta(hours=-5)))
+                        .time())
 
         return ((current_weekday < 5) and
                 (current_time >= time(9, 30)) and
@@ -44,8 +47,8 @@ class GetOptions:
 
     def get_options_from_tda(self, cfg, tda, wtc):
         """Downloads, saves/opens Pickle file &  assigns to Options table."""
-        min_strike_date = datetime.now() + timedelta(days=cfg['FILTERS']['min_dte'])
-        max_strike_date = datetime.now() + timedelta(days=cfg['FILTERS']['max_dte'])
+        min_strike_date = datetime.now() + timedelta(cfg['FILTERS']['min_dte'])
+        max_strike_date = datetime.now() + timedelta(cfg['FILTERS']['max_dte'])
         force_download = cfg['DEBUG']['force_download']
         if self.market_is_open() or force_download:
             self.options = get_all_tables(
@@ -65,7 +68,8 @@ class GetOptions:
                 st.write("***** YOU WILL NOW WORK IN SIMULATION MODE *****")
                 if pkl is not None and len(pkl.index) > 1:
                     self.options = pkl
-                    sim_watchlist = Watchlist.sanitize(",".join(pkl.index.levels[0]))
+                    sim_watchlist = (Watchlist
+                                     .sanitize(",".join(pkl.index.levels[0])))
                     st.write("Available symbols: " + ", ".join(sim_watchlist))
                     return True, sim_watchlist
                 else:
@@ -82,23 +86,24 @@ class GetOptions:
                     self.market_is_open()):
                 try:
                     with open(name, 'wb') as file:
-                        pickle.dump(self.options, file, pickle.HIGHEST_PROTOCOL)
+                        pickle.dump(self.options,
+                                    file,
+                                    pickle.HIGHEST_PROTOCOL)
                     st.write("Market is open. Saving live chains.")
                 except IOError as e:
-                    st.warning("Error: Local file had trouble saving. " + str(e))
+                    st.warning(f"Error: Local file had trouble saving. {e}")
 
     def export_option_results(self, cfg):
         """Export table to CSV with Options analyzed to data path."""
         if cfg['DEBUG']['export']:
             if self.options is not None and len(self.options.index) > 0:
                 suffix = datetime.now().strftime("%y%m%d_%H%M%S")
-                ext = ".csv"
-                name = fix_path(cfg['DEBUG']['data']) + "options_" + suffix + ext
+                name = f"{fix_path(cfg['DEBUG']['data'])}options_{suffix}.csv"
                 try:
                     self.options.to_csv(name, index=True, header=True)
                     st.write("Table saved at: {}".format(name))
                 except IOError as e:
-                    st.error("Error attempting to save table. Error: " + str(e))
+                    st.error(f"Error attempting to save table. Error: {e}")
 
 
 class OptionAnalysis:
@@ -112,7 +117,7 @@ class OptionAnalysis:
         """Concatenates option chains per strategy.
 
         :param cfg: Configuration dictionary.
-        :param option_df: Options where key is the symbol and value is the datafame.
+        :param option_df: Option chain. Key are symbols and Value DataFrames.
         """
         if option_df.options is not None:
             strategies = cfg['FILTERS']['strategies'].strip().split(',')
@@ -121,7 +126,7 @@ class OptionAnalysis:
             for strategy in strategies:
                 try:
                     self.run_options(
-                        selected=strategy,
+                        sel=strategy,
                         opt=option_df,
                         cfg=cfg
                     )
@@ -130,26 +135,26 @@ class OptionAnalysis:
                     exit(1)
 
     def run_options(self,
-                    selected: str,
+                    sel: str,
                     opt,
                     cfg: dict):
         """Runs the corresponding options analysis.
 
-        :param selected: Strategy applied.
+        :param sel: Strategy applied.
         :param cfg: Configuration dictionary.
         :param opt: options table
         """
         result = None
-        if selected == 'naked':
-            result = sniper_strategy.naked(opt.options, filters=cfg['FILTERS'])
-        elif selected == 'spread':
-            result = sniper_strategy.spread(opt.options, filters=cfg['FILTERS'])
-        elif selected == 'condor':
-            result = sniper_strategy.condor(opt.options, filters=cfg['FILTERS'])
+        if sel == 'naked':
+            result = sniper_strategy.naked(opt.options, cfg['FILTERS'])
+        elif sel == 'spread':
+            result = sniper_strategy.spread(opt.options, cfg['FILTERS'])
+        elif sel == 'condor':
+            result = sniper_strategy.condor(opt.options, cfg['FILTERS'])
         if cfg['DEBUG']['export']:
             if result is not None and len(result.index) > 0:
                 suffix = datetime.now().strftime("%y%m%d_%H%M%S")
-                name = f"{fix_path(cfg['DEBUG']['data'])}{selected}_hacker_{suffix}.csv"
+                name = f"{fix_path(cfg['DEBUG']['data'])}{sel}_{suffix}.csv"
                 try:
                     result.to_csv(name, index=True, header=True)
                     st.success("Table saved at: {}".format(name))
@@ -158,7 +163,7 @@ class OptionAnalysis:
             else:
                 raise st.warning("To export the options table needs data.")
 
-        self.df_out = {selected: result}
+        self.df_out = {sel: result}
 
 
 def snipe(cfg: dict):
@@ -171,5 +176,5 @@ def snipe(cfg: dict):
 
 
 if __name__ == '__main__':
-    from core.settings import S
-    snipe(cfg=S.OPTION_SNIPER)
+    import core.settings as ss
+    snipe(cfg=ss.OPTION_SNIPER)

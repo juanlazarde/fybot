@@ -7,7 +7,7 @@ from time import time as t
 import pandas as pd
 
 from core.database import Database
-from core.settings import S
+import core.settings as ss
 
 log = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class GetAssets:
             raise Exception("Empty symbols database")
 
         symbols = data['symbol'].to_list()
-        symbols = symbols[:S.MAX_SYMBOLS]
+        symbols = symbols[:ss.MAX_SYMBOLS]
 
         self.data = data
         self.symbols = symbols
@@ -159,9 +159,9 @@ class GetAssets:
         :return: Symbols and Security names in DataFrame object"""
 
         import alpaca_trade_api as tradeapi
-        api = tradeapi.REST(key_id=S.ALPACA_KEY,
-                            secret_key=S.ALPACA_SECRET,
-                            base_url=S.ALPACA_ENDPOINT)
+        api = tradeapi.REST(key_id=ss.ALPACA_KEY,
+                            secret_key=ss.ALPACA_SECRET,
+                            base_url=ss.ALPACA_ENDPOINT)
         active_assets = api.list_assets(status='active')
         tradable_assets = [(asset.symbol, asset.name) for asset in
                            active_assets if asset.tradable]
@@ -245,8 +245,8 @@ class File(GetAssets):
     def save(self):
         """Save symbols to file"""
 
-        self.data.to_csv(S.SYMBOLS_FILE, index=False)
-        log.info(f"Symbols saved to CSV file: {S.SYMBOLS_FILE}")
+        self.data.to_csv(ss.SYMBOLS_FILE, index=False)
+        log.info(f"Symbols saved to CSV file: {ss.SYMBOLS_FILE}")
         return self.symbols
 
     @staticmethod
@@ -255,14 +255,14 @@ class File(GetAssets):
 
         import pytz
 
-        if os.path.isfile(S.SYMBOLS_FILE):
-            df = pd.read_csv(S.SYMBOLS_FILE)
+        if os.path.isfile(ss.SYMBOLS_FILE):
+            df = pd.read_csv(ss.SYMBOLS_FILE)
             if df.empty:
                 raise Exception("Empty symbols file")
             df = df.rename(columns=str.lower)
             df = df[['symbol', 'security']]
 
-            timestamp = os.stat(S.SYMBOLS_FILE).st_mtime
+            timestamp = os.stat(ss.SYMBOLS_FILE).st_mtime
             timestamp = datetime.datetime.fromtimestamp(
                 timestamp, tz=datetime.timezone.utc)
             now_utc = pytz.utc.localize(datetime.datetime.utcnow())

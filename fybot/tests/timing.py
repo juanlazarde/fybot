@@ -5,7 +5,7 @@ import core.snp as sn
 
 def main():
     forced = True
-    symbols = sn.GetAssets(forced).symbols  #3.6s
+    symbols = sn.GetAssets(forced).symbols  # 3.6s
 
     # 300 symbols
 

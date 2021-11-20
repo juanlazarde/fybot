@@ -1,21 +1,18 @@
 """News page"""
 
 import streamlit as st
-from core.news import News
-from core.settings import S
+import core.news as nw
+import core.settings as ss
 
 
 def app():
     st.title("News")
-    with st.spinner(text="Loading Symbol Data"):
-        nw = News
-
     sources = st.sidebar.selectbox(label="Select your sources",
-                                   options=S.NEWS['sources'],
+                                   options=ss.NEWS['sources'],
                                    index=0)
     st.header(sources)
     subsources = st.sidebar.selectbox(label="Select your subs",
-                                      options=S.NEWS['subsources'],
+                                      options=ss.NEWS['subsources'],
                                       index=0)
     subheader_prefix = "s/" if sources == "Reddit" else ""
     st.subheader(f"{subheader_prefix}{subsources}")

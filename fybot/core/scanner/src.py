@@ -10,9 +10,9 @@ import pytz
 import logging
 
 from core.database import Database
-from core.settings import S
-from core.snp.assets import GetAssets
-from core.filters import Signals
+import core.settings as ss
+from core.scanner.assets import GetAssets
+from core.scanner.filters import Signals
 
 log = logging.getLogger()
 
@@ -36,7 +36,7 @@ class Index:
         except Exception as e:
             print(e)
             symbols = pd.read_csv(
-                S.SYMBOLS_FILE, index_col='symbol', usecols=[0, 1])
+                ss.SYMBOLS_FILE, index_col='symbol', usecols=[0, 1])
         # _wtc.stocks = symbols.T.to_dict()
         self.stocks = symbols.set_index('symbol').T.to_dict('dict')
 
@@ -47,7 +47,7 @@ class Index:
                 raise Exception("Blank database")
         except Exception as e:
             print(e)
-            self.signals = pd.read_pickle(S.SIGNALS_FILE)
+            self.signals = pd.read_pickle(ss.SIGNALS_FILE)
 
     def apply_filters(self):
         """Filter signal table with selections"""
@@ -90,8 +90,8 @@ class Index:
         now_utc = pytz.utc.localize(datetime.datetime.utcnow())
         timestamp = now_utc - datetime.timedelta(hours=25)
         if source_file:
-            if os.path.isfile(S.PRICE_FILE):
-                timestamp = os.stat(S.PRICE_FILE).st_mtime
+            if os.path.isfile(ss.PRICE_FILE):
+                timestamp = os.stat(ss.PRICE_FILE).st_mtime
         else:
             query = f"SELECT date FROM last_update WHERE tbl = '{table}';"
             with Database() as db:
@@ -103,7 +103,7 @@ class Index:
 
 # run in terminal 'flask run', auto-update with 'export FLASK_ENV=development'
 # app = Flask(__name__)
-# app.config['SECRET_KEY'] = S.FLASK_SECRET_KEY
+# app.config['SECRET_KEY'] = ss.FLASK_SECRET_KEY
 #
 #
 # @app.route("/stock/<symbol>")
@@ -119,7 +119,7 @@ class Index:
 #     # _wtc.stocks = symbols.T.to_dict()
 #     stocks = symbols.set_index('symbol').T.to_dict('dict')
 #
-#     # df = pd.read_csv(S.SYMBOLS_FILE, index_col='symbol', usecols=[0, 1])
+#     # df = pd.read_csv(ss.SYMBOLS_FILE, index_col='symbol', usecols=[0, 1])
 #     # stocks = df.T.to_dict()
 #     security = stocks[symbol]['security']
 #
@@ -129,7 +129,7 @@ class Index:
 #             raise Exception("Blank database")
 #     except Exception as e:
 #         print(e)
-#         data = pd.read_pickle(S.PRICE_FILE)
+#         data = pd.read_pickle(ss.PRICE_FILE)
 #     bars_df = data.loc[(data['symbol'] == symbol)]
 #     bars_df = bars_df.drop(['symbol'], axis=1)
 #     # df.reset_index(drop=True, inplace=True)
@@ -150,7 +150,7 @@ class Index:
 #     """Renders index.html page"""
 #
 #     # Defaults and variable initialization
-#     active_filters = S.DEFAULT_FILTERS
+#     active_filters = ss.DEFAULT_FILTERS
 #     data = {}
 #     settings = ''
 ##
@@ -446,9 +446,9 @@ class Index:
 #          asyncio.run(_wtc.to_database())
 #
 #      async def to_file(_wtc):
-#          # _wtc.assets.data.to_csv(S.SYMBOLS_FILE, index=False)
-#          # _wtc.fundamental.data.to_pickle(S.FUNDAMENTALS_FILE)
-#          _wtc.price.data.to_pickle(S.PRICE_FILE)
+#          # _wtc.assets.data.to_csv(ss.SYMBOLS_FILE, index=False)
+#          # _wtc.fundamental.data.to_pickle(ss.FUNDAMENTALS_FILE)
+#          _wtc.price.data.to_pickle(ss.PRICE_FILE)
 #
 #      async def to_database(_wtc):
 #          def timestamp(table):
@@ -510,8 +510,8 @@ class Index:
 #                      await db.execute(timestamp('price_history'))
 #
 # # main database saving function try: async with asyncpg.create_pool(
-# host=S.DB_HOST, database=S.DB_NAME, user=S.DB_USER,
-# password=S.DB_PASSWORD) as pool: await symbols(_wtc.assets.data) await
+# host=ss.DB_HOST, database=ss.DB_NAME, user=ss.DB_USER,
+# password=ss.DB_PASSWORD) as pool: await symbols(_wtc.assets.data) await
 # asyncio.gather( fundamental(_wtc.fundamental.data), price_history(
 # _wtc.price.data) ) except Exception as e: print(e) sys.exit()
 

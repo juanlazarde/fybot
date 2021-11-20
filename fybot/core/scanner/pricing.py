@@ -10,7 +10,7 @@ import pandas as pd
 import yfinance as yf
 
 from core.database import Database
-from core.settings import S
+import core.settings as ss
 from core.fy_tda import TDA
 
 log = logging.getLogger(__name__)
@@ -120,8 +120,8 @@ class GetPrice:
             """
 
         # using asynciopg as the Database connection manager for Async
-        creds = {'host': S.DB_HOST, 'database': S.DB_NAME,
-                 'user': S.DB_USER, 'password': S.DB_PASSWORD}
+        creds = {'host': ss.DB_HOST, 'database': ss.DB_NAME,
+                 'user': ss.DB_USER, 'password': ss.DB_PASSWORD}
         async with asyncpg.create_pool(**creds) as pool:
             async with pool.acquire() as db:
                 async with db.transaction():
@@ -148,7 +148,7 @@ class Source(GetPrice):
 
         # download stocks data in chunks and concatenate to large table
         end_date = datetime.datetime.now()
-        start_date = end_date - datetime.timedelta(days=S.DAYS)
+        start_date = end_date - datetime.timedelta(days=ss.DAYS)
 
         df = pd.DataFrame()
 
@@ -204,7 +204,7 @@ class Source(GetPrice):
         """
 
         end_date = datetime.datetime.now()
-        start_date = end_date - datetime.timedelta(days=S.DAYS)
+        start_date = end_date - datetime.timedelta(days=ss.DAYS)
 
         df = pd.DataFrame()
 
@@ -273,23 +273,23 @@ class File(GetPrice):
     def load(self):
         """Gets Price History from pickle file"""
 
-        self.data = pd.read_pickle(S.PRICE_FILE)
+        self.data = pd.read_pickle(ss.PRICE_FILE)
         log.info("Loaded Price History from file")
         return self.data
 
     def save_to_file(self):
         """Save pricing data in a pickle file"""
 
-        self.data.to_pickle(S.PRICE_FILE)
-        self.data.T.to_csv(S.PRICE_FILE + ".csv")
-        log.info(f"Price data saved to pickle file: {S.PRICE_FILE}")
+        self.data.to_pickle(ss.PRICE_FILE)
+        self.data.T.to_csv(ss.PRICE_FILE + ".csv")
+        log.info(f"Price data saved to pickle file: {ss.PRICE_FILE}")
 
 
 if __name__ == '__main__':
-    from core.snp.assets import GetAssets
+    from core.scanner.assets import GetAssets
     from logging.config import fileConfig
 
-    fileConfig(S.LOGGING_FILE, disable_existing_loggers=False)
+    fileConfig(ss.LOGGING_FILE, disable_existing_loggers=False)
     log = logging.getLogger(__name__)
 
     _symbols = GetAssets.load_database()['symbol'].to_list()

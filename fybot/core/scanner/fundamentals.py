@@ -9,7 +9,7 @@ import pandas as pd
 import yahooquery as yq
 
 from core.database import Database
-from core.settings import S
+import core.settings as ss
 from core.fy_tda import TDA
 
 log = logging.getLogger(__name__)
@@ -250,8 +250,8 @@ class GetFundamental:
             """
 
         # using asynciopf as the Database connection manager for Async
-        creds = {'host': S.DB_HOST, 'database': S.DB_NAME,
-                 'user': S.DB_USER, 'password': S.DB_PASSWORD}
+        creds = {'host': ss.DB_HOST, 'database': ss.DB_NAME,
+                 'user': ss.DB_USER, 'password': ss.DB_PASSWORD}
         async with asyncpg.create_pool(**creds) as pool:
             async with pool.acquire() as db:
                 async with db.transaction():
@@ -264,17 +264,17 @@ class File(GetFundamental):
     def load(self):
         """Gets fundamentals data from pickle file"""
 
-        self.data = pd.read_pickle(S.FUNDAMENTALS_FILE)
+        self.data = pd.read_pickle(ss.FUNDAMENTALS_FILE)
         log.info("Loaded fundamentals from file")
         return self.data
 
     def save(self):
         """Save fundamental data in a pickle file"""
 
-        self.data.to_pickle(S.FUNDAMENTALS_FILE)
-        self.data.T.to_csv(S.FUNDAMENTALS_FILE + ".csv")
+        self.data.to_pickle(ss.FUNDAMENTALS_FILE)
+        self.data.T.to_csv(ss.FUNDAMENTALS_FILE + ".csv")
         log.info(f"Fundamentals saved to pickle file: "
-                 f"{S.FUNDAMENTALS_FILE}")
+                 f"{ss.FUNDAMENTALS_FILE}")
 
     # list of columns in YFinance
     """['zip', 'sector', 'fullTimeEmployees']
@@ -322,10 +322,10 @@ class File(GetFundamental):
 
 
 if __name__ == '__main__':
-    from core.snp.assets import GetAssets
+    from core.scanner.assets import GetAssets
     from logging.config import fileConfig
 
-    fileConfig(S.LOGGING_FILE, disable_existing_loggers=False)
+    fileConfig(ss.LOGGING_FILE, disable_existing_loggers=False)
     log = logging.getLogger(__name__)
 
     _symbols = GetAssets.load_database()['symbol'].to_list()
