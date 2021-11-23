@@ -1,66 +1,92 @@
-from sys import exit
+import sys
+from typing import Dict, List
 
 import pandas as pd
+import streamlit as st
 from numpy import percentile
 from scipy.spatial.distance import cdist
+import core.formatter as fm
+
+from core.utils import performance
 
 
-def divider():
-    pass
+def distance_matrix(
+        df_ask: pd.Series,
+        df_bid: pd.Series) -> pd.DataFrame:
+    """Calculates difference in a 2D matrix (Ask rows & Bid columns).
 
+    Index for these series is the the information to be expanded later.
 
-def display(arg):
-    print(arg)
+    :param df_ask: Ask series.
+    :param df_bid: Bid series.
+    :return: Dataframe with differences between values in rows and columns.
+    """
+    xa: List[float] = df_ask.to_numpy().tolist()
+    xb: List[float] = df_bid.to_numpy().tolist()
+    y = cdist(xa, xb, "cityblock")
+    df: pd.DataFrame = pd.DataFrame(
+        data=y,
+        index=df_ask.index,
+        columns=df_bid.index
+    )
 
-
-def calculate_cdistance_1d(df1, df2):
-    xa = df1.values.reshape((-1, 1))
-    xb = df2.values.reshape((-1, 1))
-    df = pd.DataFrame(cdist(xa, xb, 'cityblock'), index=df1.index,
-                      columns=df2.index)
     return df
 
 
-def hack_bid_ask_spreads_put_call(df):
-    # cols needed for reporting and filtering for short strike
-    cols_meta = ['daysToExpiration', 'delta']
-    # cols needed for cross calculation
-    cols_to_cross = ['bid', 'ask']
-    # col needed for post operations between short/long
-    cols_for_post = ['strikePrice', 'mark']
+# @performance
+def search_for_spreads(df: pd.DataFrame) -> Dict[str, dict]:
+    """
+    Search best option spread.
+
+    :param df: Dataframe with option chain.
+    :return: Dictionationary with pest spreads by date.
+    """
+    # Index key initialization.
+    index_keys = [
+        'option_type',
+        'stock'
+    ]
+
+    # Fields needed for Cross-Calculations.
+    cols_to_cross = [
+        'bid',
+        'ask'
+    ]
+
+    # Fields needed for post operations between short/long.
+    cols_for_post = [
+        'strikePrice',
+        'mark'
+    ]
     cols_post_levels = list(range(len(cols_for_post)))
-    cols = cols_meta + cols_to_cross + cols_for_post
 
-    # prepares index keys:
-    # ['stock','option_type','delta','volatility','meta_columns','strikePrice']
-    df = df[cols]
-    df = df.reset_index()
-    index_keys = ['option_type', 'stock']
-    index_keys.extend(cols_meta)
-    index_keys.extend(cols_for_post)
-    df.set_index(index_keys, inplace=True)
+    # Fields for Reporting and filtering for short strike.
+    cols_meta = [i for i in df.columns.to_list()
+                 if i not in (index_keys + cols_to_cross + cols_for_post)]
 
-    df = df.drop(columns=['symbol'])
+    # Compress data into index
+    index_keys += cols_meta + cols_for_post
+    df = df.set_index(index_keys)
 
     # calculate all bid - ask spreads (absolute values)
     # cross-calculates all strike prices and stock combinations
+    dfx = pd.DataFrame()
+    if len(df.index) > 1:
+        dfx = distance_matrix(df[['ask']], df[['bid']])
+    else:
+        st.error('Not enough options available. Try losening search criteria')
+        st.stop()
 
-    dfx = calculate_cdistance_1d(df[['bid']], df[['ask']])
-
-    # -------------
-    spread_dict = {'put': {}, 'call': {}}
-    stock_list = dfx.index.get_level_values('stock').unique()
-
-    # prep fields that need to be labeled short & long and added to index
+    # Prep fields short & long labels added to index.
     prep_key_short = [('short_' + col) for col in cols_for_post]
     prep_key_long = [('long_' + col) for col in cols_for_post]
-    # prep_key = [item for sublist in prep_key for item in sublist]
     new_key = cols_meta + prep_key_short + prep_key_long
 
-    # separate puts/calls and each stock. Calculate spread of short-long
-    # strikes
-
+    # Separate puts/calls and stocks, and calculate spread short-long strikes
+    spread_dict = {'put': {}, 'call': {}}
+    stock_list = dfx.index.get_level_values('stock').unique()
     dfx = dfx.sort_index()
+
     for k in spread_dict:
         for s in stock_list:
             try:
@@ -68,9 +94,8 @@ def hack_bid_ask_spreads_put_call(df):
                 df = df.sort_index(axis=1)
                 df = df.xs((k, s), axis=1)
                 df = df.droplevel(cols_meta, axis=1)
-                df = pd.DataFrame(
-                    df.stack(dropna=True, level=cols_post_levels),
-                    columns=['prem_bid_ask'])
+                df = df.stack(dropna=True, level=cols_post_levels)
+                df = pd.DataFrame(df, columns=['prem_bid_ask'])
                 df.index = df.index.set_names(new_key)
                 df = df.reset_index()
 
@@ -93,101 +118,181 @@ def hack_bid_ask_spreads_put_call(df):
     return spread_dict
 
 
-def format_table(df_in):
-    df_out = df_in.copy()
-    df_out['spread'] = df_out['spread'].map("${:,.2f}".format)
-    df_out['mark'] = df_out['mark'].map("${:,.2f}".format)
-    df_out['bid_ask'] = df_out['bid_ask'].map("${:,.2f}".format)
-    df_out['delta'] = df_out['delta'].map("{:,.2f}".format)
-    df_out['sprd_ratio'] = df_out['sprd_ratio'].map("{:,.3f}".format)
-    df_out['max_profit'] = df_out['max_profit'].map("${:,.2f}".format)
-    df_out['risk'] = df_out['risk'].map("${:,.2f}".format)
-    df_out['return'] = df_out['return'].map("{0:.2f}%".format)
-    df_out['return_day'] = df_out['return_day'].map("{0:.2f}%".format)
-    return df_out
-
-
-def print_table(title, df_in, sort_by, top_n=10):
-    print("Top {} {}:\n".format(top_n, title))
-    df_out = df_in.sort_values(sort_by, ascending=False)
-    df_out = format_table(df_out)
-    print(df_out.head(top_n))
-
-
-def spread(df, filters):
-    """Calculate and Retrieve Vertical Spread options on th parameters given.
-
-    Args:
-        df (data frame): Option chain table.
-        filters (dictionary): Filters for the options to be shown.
-
-    Returns:
-        Options table data frame
+def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
     """
-    print("SPREAD HACKER\n" +
-          "=" * 13)
-    # variable assignment
-    option_type = filters['option_type'].lower().strip()
-    option_itm = False
-    min_price = float(filters['min_price'])
-    max_price = float(filters['max_price'])
-    strike_price_spread = float(filters['strike_price_spread'])
-    max_risk = float(filters['max_risk'])
-    min_return_pct = float(filters['min_return_pct'])
-    max_dte = int(filters['max_dte'])
-    min_dte = int(filters['min_dte'])
-    max_delta = float(filters['max_delta'])
-    min_open_int_pctl = int(filters['min_open_int_pctl'])
-    min_volume_pctl = int(filters['min_volume_pctl'])
-    max_bid_ask_pctl = float(filters['max_bid_ask_pctl'])
-    top_n = int(filters['top_n'])
+    Calculate and Retrieve Vertical Spread options on the parameters given.
 
-    # ------- Filter options source data before cross-calculation
-    # clean table
-    df = df[df['delta'] != 'NaN']
-    df = df[df['openInterest'] > 0]
-    df = df[df['totalVolume'] > 0]
-    df = df[df['bid'] > 0]
-    df = df[df['ask'] > 0]
+    :param df_in: Option chain table.
+    :param filters: Filters for the options to be shown.
+    :return: Options table dataframe.
+    """
+    # Variable assignment.
+    # TODO: Make Debit/credit premium type work
+    premium_type = filters['premium_type'].lower().strip()
+    # TODO: Check on ITM treatment
+    option_itm: bool = False
 
-    # filter
-    open_int_pctl = percentile(df['openInterest'], min_open_int_pctl)
-    volume_pctl = percentile(df['totalVolume'], min_volume_pctl)
+    option_type: str = filters['option_type'].lower().strip()
+    strike_price_spread: float = float(filters['strike_price_spread'])
+    max_risk: float = float(filters['max_risk'])
+    min_return_pct: float = float(filters['min_return_pct']) / 100
+    max_dte: int = int(filters['max_dte'])
+    min_dte: int = int(filters['min_dte'])
+    max_delta: float = float(filters['max_delta'])
+    min_open_int_pctl: float = float(filters['min_open_int_pctl']) / 100
+    min_volume_pctl: float = float(filters['min_volume_pctl']) / 100
+    max_bid_ask_pctl: float = float(filters['max_bid_ask_pctl']) / 100
+
+    # Clean table.
+    # Columns available will be commented out.
+    _cols = [
+        'putCall',
+        'symbol',
+        # 'description',
+        'exchangeName',
+        # 'bid',
+        # 'ask',
+        'last',
+        # 'mark',
+        'bidSize',
+        'askSize',
+        'bidAskSize',
+        'lastSize',
+        'highPrice',
+        'lowPrice',
+        'openPrice',
+        'closePrice',
+        # 'totalVolume',
+        'tradeDate',
+        'tradeTimeInLong',
+        'quoteTimeInLong',
+        'netChange',
+        # 'volatility',
+        # 'delta',
+        'gamma',
+        'theta',
+        'vega',
+        'rho',
+        # 'openInterest',
+        'timeValue',
+        'theoreticalOptionValue',
+        'theoreticalVolatility',
+        'optionDeliverablesList',
+        # 'strikePrice',
+        'expirationDate',
+        # 'daysToExpiration',
+        'expirationType',
+        'lastTradingDay',
+        # 'multiplier',
+        'settlementType',
+        'deliverableNote',
+        'isIndexOption',
+        'percentChange',
+        'markChange',
+        'markPercentChange',
+        'intrinsicValue',
+        # 'inTheMoney',
+        'pennyPilot',
+        'mini',
+        'nonStandard'
+    ]
+    df = df_in.copy()
+    df.drop(columns=_cols, inplace=True)
+    df.reset_index(inplace=True)
+    df.drop(columns=['symbol'], inplace=True)
+    df.sort_values(by='stock', ascending=True, inplace=True)
+
+    # Filter: Pass 1. Before cross-calculation.
+    df = df[(df['delta'] != 'NaN')
+            & (df['openInterest'] > 0)
+            & (df['totalVolume'] > 0)
+            & (df['bid'] > 0)
+            & (df['ask'] > 0)
+            ]
+
+    _shp: int = df.shape[0]  # Impact log initialization.
+    impact: Dict[str, str] = {'Starting size': f"{_shp}"}
+
     if option_type in ['put', 'call']:
-        df = df[df['putCall'].str.lower() == option_type]
+        df = df[df['option_type'].str.lower() == option_type]
+    impact['Option type'] = f"{df.shape[0] / _shp:.0%}"
+
     df = df[df['inTheMoney'] == option_itm]
-    df = df[(df['delta'] <= max_delta) &
-            (df['delta'] >= -max_delta)]
-    df = df[df['totalVolume'] >= volume_pctl]
-    df = df[df['openInterest'] >= open_int_pctl]
-    df = df[(df['daysToExpiration'] >= min_dte) &
-            (df['daysToExpiration'] <= max_dte)]
-    df = df[(df['strikePrice'] >= min_price) &
-            (df['strikePrice'] <= max_price)]
+    impact['ITM'] = f"{df.shape[0] / _shp:.0%}"
 
-    # calculated columns
-    df['max_bid_ask_pctl'] = 1 - df['bid'] / df['ask']
-    max_bid_ask = percentile(df['max_bid_ask_pctl'], max_bid_ask_pctl)
-    df = df[df['max_bid_ask_pctl'] <= max_bid_ask]
+    df = df[(df['delta'] <= max_delta)
+            & (df['delta'] >= -max_delta)]
+    impact['Delta'] = f"{df.shape[0] / _shp:.0%}"
 
-    # exit if table is empty
+    df = df[(df['daysToExpiration'] >= min_dte)
+            & (df['daysToExpiration'] <= max_dte)]
+    impact['DTE'] = f"{df.shape[0] / _shp:.0%}"
+
+    # Calculated columns
+    df['bid_ask_pct'] = (df['ask'] / df['bid'] - 1)
+    df['bid_ask_rank'] = (df.groupby('stock')['bid_ask_pct']
+                          .rank(pct=True, ascending=False, method='dense'))
+    df['open_int_rank'] = (df.groupby('stock')['openInterest']
+                           .rank(pct=True, ascending=True, method='dense'))
+    df['volume_rank'] = (df.groupby('stock')['totalVolume']
+                         .rank(pct=True, ascending=True, method='dense'))
+
+    # Filter: Pass 2. Before cross calculations.
+    df = df[df['bid_ask_rank'] >= max_bid_ask_pctl]
+    impact['Bid/Ask'] = f"{df.shape[0] / _shp:.0%}"
+
+    df = df[df['open_int_rank'] >= min_open_int_pctl]
+    impact['Open Interest'] = f"{df.shape[0] / _shp:.0%}"
+
+    df = df[df['volume_rank'] >= min_volume_pctl]
+    impact['Volume'] = f"{df.shape[0] / _shp:.0%}"
+
+    # Exit if table is empty
     if len(df.index) == 0:
-        print("\n\n*** Nothing to see here! There're no symbols/instruments "
-              "that meet the criteria ***")
-        return
+        st.warning("**Nothing to see here!** Criteria not met")
+        st.write("**Here's the impact of the filters you've set:**")
+        _impact_table = pd.DataFrame(impact.items(), ['Filter', '% of Total'])
+        _impact_table = _impact_table.set_index('Filter')
+        st.table(_impact_table)
+        st.stop()
 
-    # ------- process spreads
-    spread_dict = {}
-    days_to_expiration_list = sorted(df['daysToExpiration'].unique())
+    # Clear table before processing for spreads.
+    _cols = [
+        'stock',
+        'option_type',
+        'description',
+        'bid',
+        'ask',
+        'mark',
+        # 'totalVolume',
+        'volatility',
+        'delta',
+        # 'openInterest',
+        'strikePrice',
+        'daysToExpiration',
+        'multiplier',
+        # 'inTheMoney',
+        # 'bid_ask_pct',
+        # 'bid_ask_rank',
+        # 'open_int_rank',
+        # 'volume_rank'
+    ]
+    df = df[_cols]
 
-    for dte in days_to_expiration_list:
+    # Search for spreads
+    spread_dict: Dict = dict()
+    sorted_dte: List[int] = sorted(df['daysToExpiration'].unique())
+
+    for dte in sorted_dte:
         df_by_dte = df[df['daysToExpiration'] == dte]
-        pre_spread_dict = hack_bid_ask_spreads_put_call(df_by_dte)
+        pre_spread_dict = search_for_spreads(df_by_dte)
+
+        if (len(pre_spread_dict['call']) == 0 and
+           len(pre_spread_dict['put']) == 0):
+            st.warning("Options for mining are empty")
+            st.stop()
 
         # overwrite dictionaries with concatenated df across all symbols
-        if pre_spread_dict['call'] == 0 and pre_spread_dict['put'] == 0:
-            exit("Options for mining are empty")
-
         for i in ['put', 'call']:
             if len(pre_spread_dict[i]) != 0:
                 pre_spread_dict[i] = pd.concat(pre_spread_dict[i])
@@ -196,113 +301,112 @@ def spread(df, filters):
 
         spread_dict[dte] = pd.concat(pre_spread_dict)
 
-    spread_df = pd.concat(spread_dict)
-    spread_df = spread_df.droplevel(level=0)
+    df = pd.concat(spread_dict)
+    df = df.droplevel(level=0)
+    ix_names = ['option_type', 'stock', 'vertical']
+    df.index.set_names(ix_names, inplace=True)
+    df.reset_index(inplace=True)
 
     # ------- output
     # calculate all metrics
     # TODO: Decide which is better prem_sprd_ratio or return_pct
-    spread_df['prem_sprd_ratio'] = \
-        spread_df['prem_mark'] / spread_df['spread']
-    # TODO: It's not 100 it should be the Multiplier, it's in df but not in
-    #  spread_df, so we need to vlookup the symbol from spread_df in df and
-    #  retrieve the multiplier
-    spread_df['max_profit'] = 100 * spread_df['prem_mark']
-    spread_df['risk'] = 100 * (spread_df['spread'] - spread_df['prem_mark'])
-    spread_df['return'] = \
-        100 * spread_df['max_profit'] / spread_df['risk']
-    spread_df['return_day'] = \
-        spread_df['return'] / (spread_df['daysToExpiration'] + .00001)
+    df['prem_sprd_ratio'] = df['prem_mark'] / df['spread']
+    df['max_profit'] = df['multiplier'] * df['prem_mark']
+    df['risk'] = df['multiplier'] * (df['spread'] - df['prem_mark'])
+    df['return'] = df['multiplier'] * df['max_profit'] / df['risk']
+    df['return_day'] = df['return'] / (df['daysToExpiration'] + .00001)
+    df['quantity'] = max_risk / df['risk']
+    df['search'] = \
+        df['description'].str.split(' ').str[0].astype(str) + " " + \
+        df['description'].str.split(' ').str[2].astype(str) + " " + \
+        df['description'].str.split(' ').str[1].astype(str) + " " + \
+        df['description'].str.split(' ').str[3].str[::3].astype(str) + \
+        " (" + df['daysToExpiration'].astype(str) + ") " + \
+        df['option_type'].str.upper().astype(str) + " " + \
+        df['vertical'].astype(str)
 
-    spread_df = spread_df[spread_df['spread'] <= strike_price_spread]
-    spread_df = spread_df[spread_df['return'] >= min_return_pct]
-    spread_df = spread_df[spread_df['risk'] <= max_risk]
-    spread_df = spread_df[spread_df['risk'] >= spread_df['max_profit']]
+    # More filters
+    df = df[df['spread'] <= strike_price_spread]
+    impact['Spread'] = f"{df.shape[0] / _shp:.0%}"
 
-    spread_df = spread_df.sort_values('return', ascending=False)
-    ix_names = ['putCall', 'symbol', 'vertical']
-    spread_df.index.set_names(ix_names, inplace=True)
-    spread_df = spread_df.reset_index()
-    cols = ['symbol', 'putCall', 'vertical', 'daysToExpiration', 'spread',
-            'prem_bid_ask', 'prem_mark', 'prem_sprd_ratio', 'delta',
-            'max_profit', 'risk', 'return', 'return_day']
-    spread_df = spread_df[cols]
+    df = df[df['return'] >= min_return_pct]
+    impact['Return'] = f"{df.shape[0] / _shp:.0%}"
 
-    spread_df.rename(columns={'putCall': 'type',
-                              'daysToExpiration': 'dte',
-                              'prem_bid_ask': 'bid_ask',
-                              'prem_mark': 'mark',
-                              'prem_sprd_ratio': 'sprd_ratio'},
-                     inplace=True)
+    df = df[df['risk'] <= max_risk]
+    impact['Risk'] = f"{df.shape[0] / _shp:.0%}"
 
-    # output
-    symbols_list = ', '.join(sorted(spread_df.symbol.unique()))
-    print("Analyzing: {}".format(symbols_list) +
-          "\nShowing: {}".format(option_type) +
-          "\nMax Risk: ${:,.2f}".format(max_risk) +
-          "\nPrice range: ${:,.2f} & ${:,.2f}".format(min_price, max_price) +
-          "\nDTE range: {} & {} days".format(min_dte, max_dte) +
-          "\nMax Delta <= {} (~{:.0f}% Prob OTM)".format(
-              max_delta, 100 * (1 - max_delta)),
-          "\nBid-Ask Ratio <= {:,.2f} (1-bid/ask)".format(max_bid_ask) +
-          "\nMin Volume & Op. Int. >= {} & {}".format(
-              volume_pctl, open_int_pctl) +
-          "\n")
+    df = df[df['risk'] >= df['max_profit']]
+    impact['Risk>Profit'] = f"{df.shape[0] / _shp:.0%}"
 
-    if len(spread_df.symbol.unique()):
-        print_table(title="Paying Spreads Sorted by Return",
-                    df_in=spread_df,
-                    sort_by='return',
-                    top_n=top_n
-                    )
-        print_table(title="Paying Spreads Sorted by Daily Return",
-                    df_in=spread_df,
-                    sort_by='return_day',
-                    top_n=top_n
-                    )
-        print_table(title="Paying Spreads Sorted by Max Profit",
-                    df_in=spread_df,
-                    sort_by='max_profit',
-                    top_n=top_n
-                    )
+    # exit if table is empty
+    if len(df.index) == 0:
+        st.warning("**Nothing to see here!** Criteria not met")
+        st.write("**Here's the impact of the filters you've set:**")
+        st.table(pd.DataFrame(impact.items(), ['Filter', '% of Total'])
+                   .set_index('Filter'))
+        return
 
-        print("Top {} Paying Spreads Grouped by Symbol, Sorted by "
-              "Returns\n".format(top_n))
-        out_df1 = spread_df.copy()
-        sorted_symbols = sorted(out_df1.symbol.unique())
-        out_df1 = format_table(out_df1)
-        top_option_for_symbol = {}
-        for symbol in sorted_symbols:
-            print("Symbol: {}".format(symbol))
-            symbol_df = out_df1[out_df1['symbol'] == symbol]
-            print(symbol_df.head(top_n))
-            top_option_for_symbol[symbol] = symbol_df.iloc[0]
-            divider()
+    df.sort_values('return', ascending=False, inplace=True)
+    df.set_index('search', inplace=True)
 
-        if len(top_option_for_symbol) > 1:
-            print("Top Paying Spreads Grouped by Symbol, Sorted by "
-                  "Daily Return\n")
-            top_symbol_df = pd.concat(top_option_for_symbol, axis=1)
-            top_symbol_df = top_symbol_df.T
-            top_symbol_df.sort_values('return_day', ascending=False,
-                                      inplace=True)
-            top_symbol_df.drop(columns=['symbol'], inplace=True)
-            top_symbol_df = top_symbol_df.rename_axis('symbol')
-            display(top_symbol_df)
-            print("\n-----> Shopping list: " + ', '.join(top_symbol_df.index))
-            divider()
+    _cols = [
+        'return',
+        'return_day',
+        'max_profit',
+        'risk',
+        'quantity',
+        'spread',
+        'prem_mark',
+        'prem_bid_ask',
+        'prem_sprd_ratio',
+        'delta',
+        'daysToExpiration',
+        'stock'
+    ]
+    df = df[_cols]
 
-        print("Top {} Paying Spreads Grouped by Days to Expiration, Sorted by "
-              "Returns\n".format(top_n))
-        out_df2 = spread_df.copy()
-        days_to_expiration_list = sorted(out_df2.dte.unique())
-        out_df2 = format_table(out_df2)
-        for days in days_to_expiration_list:
-            print("Days to Expiration: {}".format(days))
-            display(out_df2[out_df2['dte'] == days].head(top_n))
-            divider()
-    else:
-        print("\n\n*** Nothing to see here! There're no symbols/instruments "
-              "that meet the criteria ***")
-        divider()
+    _cols = {
+        'return': 'Return',
+        'return_day': 'Daily Return',
+        'max_profit': 'Max Profit',
+        'risk': 'Risk',
+        'quantity': 'Qty',
+        'spread': 'Vertical Spread',
+        'prem_mark': 'Premium Mark',
+        'prem_bid_ask': 'Premium Bid/Ask',
+        'prem_sprd_ratio': 'Premium Spread Ratio',
+        'delta': 'Delta',
+        'daysToExpiration': 'DTE',
+        'stock': 'Stock',
+    }
+
+    df = df.rename(columns=_cols)
+
+    # display results
+    df_print = (df.style.background_gradient(
+                    axis=0,
+                    subset=['Return', 'Daily Return'])
+                  .highlight_max(
+                    subset=['Return', 'Max Profit', 'Daily Return'],
+                    color=fm.HI_MAX_COLOR)
+                  .highlight_min(
+                    subset=['Return', 'Max Profit', 'Daily Return'],
+                    color=fm.HI_MIN_COLOR)
+                  .format({
+                    'Return': fm.FMT_PERCENT2,
+                    'Daily Return': fm.FMT_PERCENT2,
+                    'Max Profit': fm.FMT_DOLLAR,
+                    'Risk': fm.FMT_DOLLAR,
+                    'Vertical Spread': fm.FMT_DOLLAR,
+                    'Premium Mark': fm.FMT_DOLLAR,
+                    'Premium Bid/Ask': fm.FMT_DOLLAR,
+                    'Premium Spread Ratio': fm.FMT_DOLLAR,
+                    'Qty': fm.FMT_FLOAT0 + "x",
+                    'Delta': fm.FMT_FLOAT,
+                  })
+                )
+
+    st.title('Vertical Spread')
+    st.dataframe(data=df_print)
+
     return df

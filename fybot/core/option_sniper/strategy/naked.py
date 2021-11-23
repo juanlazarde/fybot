@@ -1,12 +1,14 @@
+from typing import Dict
+
 import pandas as pd
 import streamlit as st
 import core.formatter as fm
 
 
-def naked(df: pd.DataFrame, filters: dict) -> pd.DataFrame:
+def naked(df_in: pd.DataFrame, filters: dict) -> pd.DataFrame:
     """Retrieve naked options based on the parameters given.
 
-    :param df: Option chain table.
+    :param df_in: Option chain table.
     :param filters: Filters for the options to be shown.
     :return: Options table dataframe.
     """
@@ -77,10 +79,13 @@ def naked(df: pd.DataFrame, filters: dict) -> pd.DataFrame:
         'mini',
         'nonStandard'
     ]
+    df = df_in.copy()
     df.drop(columns=_cols, inplace=True)
     df.reset_index(inplace=True)
     df.drop(columns=['symbol'], inplace=True)
     df.sort_values(by='stock', ascending=True, inplace=True)
+
+    # Filter: Pass 1. Before cross-calculation.
     df = df[(df['delta'] != 'NaN')
             & (df['openInterest'] > 0)
             & (df['totalVolume'] > 0)
@@ -88,9 +93,8 @@ def naked(df: pd.DataFrame, filters: dict) -> pd.DataFrame:
             & (df['ask'] > 0)
             ]
 
-    # Impact log on filters over original database
-    _shp = df.shape[0]
-    impact = {'Starting size': f"{_shp}"}
+    _shp = df.shape[0]  # Impact log initialization.
+    impact: Dict[str, str] = {'Starting size': f"{_shp}"}
 
     # filter
     if option_type in ['put', 'call']:
@@ -136,7 +140,7 @@ def naked(df: pd.DataFrame, filters: dict) -> pd.DataFrame:
         df['description'].str.split(' ').str[1].astype(str) + " " + \
         df['description'].str.split(' ').str[3].str[::3].astype(str) + \
         " (" + df['daysToExpiration'].astype(str) + ") " + \
-        df['option_type'].astype(str) + " " + \
+        df['option_type'].str.upper().astype(str) + " " + \
         df['strikePrice'].astype(str)
 
     # more filters
@@ -220,14 +224,14 @@ def naked(df: pd.DataFrame, filters: dict) -> pd.DataFrame:
                     'Daily Return': fm.FMT_PERCENT2,
                     'Max Profit': fm.FMT_DOLLAR,
                     'Risk': fm.FMT_DOLLAR,
-                    'Qty': fm.FMT_INTEGER + "x",
+                    'Qty': fm.FMT_FLOAT0 + "x",
                     'Mark': fm.FMT_DOLLAR,
                     'Delta': fm.FMT_FLOAT,
-                    'IV': fm.FMT_INTEGER
+                    'IV': fm.FMT_FLOAT0
                   })
                 )
 
+    st.title('Naked Options')
     st.dataframe(data=df_print)
 
-    # output
     return df

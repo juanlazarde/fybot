@@ -206,7 +206,7 @@ def app():
             label="Option Strategy(ies)",
             options=[
                 'naked',
-                # 'spread'
+                'spread'
             ],
             default=_default,
             help="Strategies to be analyzed, i.e. naked, spread, condor",
@@ -273,7 +273,7 @@ def app():
         # How wide is the spread?
         if 'spread' in params['FILTERS']['strategies']:
             params['FILTERS']['strike_price_spread'] = col1.number_input(
-                label="Strike price spread (for spread strategy)",
+                label="Strike price spread maximum",
                 min_value=0.0,
                 max_value=5000.0,
                 step=0.1,
@@ -321,8 +321,11 @@ def app():
         )
 
         # Submit to run Option Sniper script
-        # if st.button("Snipe"):
         hunt = st.form_submit_button("Snipe")
+
+        # debug
+        # hunt = True
+
         if hunt:
             with st.spinner("Seeking target..."):
                 # nested_df is a dictionary. Key is stratey, Value is the DF

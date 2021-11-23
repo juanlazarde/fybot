@@ -103,7 +103,7 @@ OPTION_SNIPER = {
         'max_dte': 60,
         'min_dte': 0,
         'premium_type': "credit",
-        'strategies': "naked",
+        'strategies': "spread",
         'option_type': "put, call",
         'max_delta': 0.30,
         'min_volume_pctl': 5.,
