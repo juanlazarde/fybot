@@ -60,14 +60,10 @@ def _setup():
         $ python fybot setup
     """
     # TODO: Not working yet
-    if sys.argv[1] in ["help", "h", "?", "ayuda", "sos", "-help",
-                       "--help", "-h", "--h", "/h", "/help"]:
-        from setuptools.sandbox import run_setup
-        run_setup(
-            f"{os.path.dirname(os.path.realpath(__file__))}/setup.py",
-            ['clean']
-        )
-        sys.exit()
+    if sys.argv[1] in ["setup", "s", "set", "config", "configurar", "-setup",
+                       "--setup", "-s", "--s", "/s", "/setup"]:
+
+        print('Setup Not working yet')
 
 
 def _error_handling(error: Exception or str) -> None:

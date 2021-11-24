@@ -84,7 +84,7 @@ OPTION_SNIPER = {
         'data': DATASET_DIR,
     },
     'WATCHLIST': {
-        'watchlist_0': 'AMD,AMZN',
+        'watchlist_0': 'AMD, AMZN, RIVN',
         'watchlist_1': 'SPY, TQQQ',
         'watchlist_2': 'TSLA, RIVN, LCID',
         'watchlist_3': 'AMD, NVDA, AMAT',
@@ -109,6 +109,6 @@ OPTION_SNIPER = {
         'min_volume_pctl': 5.,
         'min_open_int_pctl': 5.,
         'max_bid_ask_pctl': 50.,
-        'strike_price_spread': 10.0,
+        'margin_requirement': 1000.0,
     },
 }

@@ -16,9 +16,9 @@ df = (df.style.background_gradient(axis=0, subset=list(gradient_cols))
 """
 HI_MAX_COLOR = 'darkgreen'
 HI_MIN_COLOR = 'darkred'
-FMT_PERCENT0 = "{:.0%}"
-FMT_PERCENT2 = "{:.2%}"
-FMT_FLOAT = "{:,.2f}"
-FMT_DOLLAR = "${:,.2f}"
-FMT_GENERAL = "{:0.0g}"
-FMT_FLOAT0 = "{:.0f}"
+PERCENT0 = "{:.0%}"
+PERCENT2 = "{:.2%}"
+FLOAT = "{:,.2f}"
+DOLLAR = "${:,.2f}"
+GENERAL = "{:0.0g}"
+FLOAT0 = "{:.0f}"

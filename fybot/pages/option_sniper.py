@@ -270,16 +270,17 @@ def app():
             help="Minumum expected return on investment"
         )
 
-        # How wide is the spread?
+        # How wide is the maximum margin requirement?
         if 'spread' in params['FILTERS']['strategies']:
-            params['FILTERS']['strike_price_spread'] = col1.number_input(
-                label="Strike price spread maximum",
+            params['FILTERS']['margin_requirement'] = col1.number_input(
+                label="Margin requirement allowed",
                 min_value=0.0,
                 max_value=5000.0,
                 step=0.1,
-                value=float(params['FILTERS']['strike_price_spread']),
-                help="Maximum price spread for spread strategy. "
-                     "Larger spread menas larger capital required"
+                value=float(params['FILTERS']['margin_requirement']),
+                help="Maximum margin allowed for spread strategy. "
+                     "Larger margin means larger capital required. "
+                     "Margin is the difference between strike prices."
             )
 
         # Delta maximum

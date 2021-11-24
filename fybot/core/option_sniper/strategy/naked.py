@@ -220,18 +220,18 @@ def naked(df_in: pd.DataFrame, filters: dict) -> pd.DataFrame:
                     subset=['Return', 'Max Profit', 'IV', 'Daily Return'],
                     color=fm.HI_MIN_COLOR)
                   .format({
-                    'Return': fm.FMT_PERCENT2,
-                    'Daily Return': fm.FMT_PERCENT2,
-                    'Max Profit': fm.FMT_DOLLAR,
-                    'Risk': fm.FMT_DOLLAR,
-                    'Qty': fm.FMT_FLOAT0 + "x",
-                    'Mark': fm.FMT_DOLLAR,
-                    'Delta': fm.FMT_FLOAT,
-                    'IV': fm.FMT_FLOAT0
+                    'Return': fm.PERCENT2,
+                    'Daily Return': fm.PERCENT2,
+                    'Max Profit': fm.DOLLAR,
+                    'Risk': fm.DOLLAR,
+                    'Qty': fm.FLOAT0 + "x",
+                    'Mark': fm.DOLLAR,
+                    'Delta': fm.FLOAT,
+                    'IV': fm.FLOAT0
                   })
                 )
 
-    st.title('Naked Options')
+    st.header('Naked Options')
     st.dataframe(data=df_print)
 
     return df
