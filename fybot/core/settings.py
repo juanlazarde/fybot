@@ -6,7 +6,7 @@ import config.config as config
 
 
 # FOR DEBUG ONLY
-DEBUG = True
+DEBUG = False
 MAX_SYMBOLS = 150 if DEBUG else None
 
 # define files
@@ -89,19 +89,19 @@ OPTION_SNIPER = {
         'watchlist_2': 'TSLA, RIVN, LCID',
         'watchlist_3': 'AMD, NVDA, AMAT',
         'watchlist_4': 'PG, JNJ, KC',
-        'watchlist_5': 'AMZN, APPL',
+        'watchlist_5': 'META, FB, U, ZM, ZNGA, NVDA, AMD, IMMR, ANET, STX, SHOP, RBLX, FSLY, ADSK',
         'watchlist_current': '',
         'tda_watchlist': 'default',
         'selected': 0
     },
     'FILTERS': {
         'top_n': 5,
-        'min_price': 1.00,
-        'max_price': 5000.00,
-        'max_risk': 20000.00,
-        'min_return_pct': 0.1,
+        'min_price': 1.,
+        'max_price': 5000.,
+        'max_risk': 20000.,
+        'min_return_pct': 0.5,
         'max_dte': 60,
-        'min_dte': 0,
+        'min_dte': 30,
         'premium_type': "credit",
         'strategies': "spread",
         'option_type': "put, call",
@@ -109,6 +109,6 @@ OPTION_SNIPER = {
         'min_volume_pctl': 5.,
         'min_open_int_pctl': 5.,
         'max_bid_ask_pctl': 50.,
-        'margin_requirement': 1000.0,
+        'margin_requirement': 20000.,
     },
 }

@@ -236,7 +236,7 @@ def app():
         params['FILTERS']['max_dte'] = col2.number_input(
             label="Days to Expiration, maximum",
             min_value=0,
-            max_value=1000,
+            max_value=10000,
             step=1,
             value=int(params['FILTERS']['max_dte']),
             help="Maximum days until option contracts expire"
@@ -244,7 +244,7 @@ def app():
         params['FILTERS']['min_dte'] = col2.number_input(
             label="Days to Expiration, minimum",
             min_value=0,
-            max_value=1000,
+            max_value=10000,
             step=1,
             value=int(params['FILTERS']['min_dte']),
             help="Minimum says until option contracts expire"
@@ -274,9 +274,8 @@ def app():
         if 'spread' in params['FILTERS']['strategies']:
             params['FILTERS']['margin_requirement'] = col1.number_input(
                 label="Margin requirement allowed",
-                min_value=0.0,
-                max_value=5000.0,
-                step=0.1,
+                min_value=0.,
+                step=100.,
                 value=float(params['FILTERS']['margin_requirement']),
                 help="Maximum margin allowed for spread strategy. "
                      "Larger margin means larger capital required. "
@@ -288,7 +287,7 @@ def app():
             label="Delta maximum",
             min_value=0.00,
             max_value=1.00,
-            step=0.01,
+            step=0.02,
             value=float(params['FILTERS']['max_delta']),
             help="Maximum Delta for the option (1.00 is the max)"
         )
@@ -314,9 +313,9 @@ def app():
         )
         params['FILTERS']['max_bid_ask_pctl'] = col3.number_input(
             label="Bid/Ask spread percentile",
-            min_value=0.01,
-            max_value=100.00,
-            step=0.01,
+            min_value=0.,
+            max_value=100.,
+            step=1.,
             value=float(params['FILTERS']['max_bid_ask_pctl']),
             help="Maximum Bid/Ask spread (larger number = more liquid)."
         )

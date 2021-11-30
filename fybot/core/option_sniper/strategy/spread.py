@@ -1,9 +1,7 @@
 from typing import Dict, List, Any
-
 import pandas as pd
 import numpy as np
 import streamlit as st
-
 from scipy.spatial.distance import cdist
 import core.formatter as fm
 
@@ -294,7 +292,7 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
             & (df['daysToExpiration'] <= d['max_dte'])]
     impact['DTE'] = f"{df.shape[0]/_shp:.0%}"
 
-    # Calculated columns
+    # Calculated columns.
     df['bid_ask_pct'] = df['ask']/df['bid'] - 1
     df['bid_ask_rank'] = (df.groupby('stock')['bid_ask_pct']
                           .rank(pct=True, ascending=False, method='dense'))
@@ -313,7 +311,7 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
     df = df[df['volume_rank'] >= d['min_volume_pctl']]
     impact['Volume'] = f"{df.shape[0]/_shp:.0%}"
 
-    # Exit if table is empty
+    # Exit if table is empty.
     if len(df.index) == 0:
         st.warning("**Nothing to see here!** Criteria not met")
         st.write("**Here's the impact of the filters you've set:**")
@@ -368,13 +366,41 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
     df['return'] = df['max_profit'] / df['risk']
     df['return_day'] = df['return'] / (df['daysToExpiration'] + .00001)
     df['quantity'] = np.floor(d['max_risk'] / df['risk'])
+    # Original Search similar to TD Ameritrade
+    # df['search'] = (
+    #     df['description'].str.split(' ').str[0].astype(str) + " "
+    #     + df['description'].str.split(' ').str[2].astype(str) + " "
+    #     + df['description'].str.split(' ').str[1].astype(str) + " "
+    #     + df['description'].str.split(' ').str[3].str[::3].astype(str)
+    #     + " (" + df['daysToExpiration'].map('{:.0f}'.format).astype(str) + ") "
+    #     + df['option_type'].str.upper().astype(str) + " "
+    #     + df['vertical'].astype(str)
+    # )
+
+    # Simplifying the above search column, due to a Streamlit width limitation
+    from calendar import month_abbr
+    lower_m = [m.lower() for m in month_abbr]
     df['search'] = (
-        df['description'].str.split(' ').str[0].astype(str) + " "
-        + df['description'].str.split(' ').str[2].astype(str) + " "
-        + df['description'].str.split(' ').str[1].astype(str) + " "
-        + df['description'].str.split(' ').str[3].str[::3].astype(str)
-        + " (" + df['daysToExpiration'].map('{:.0f}'.format).astype(str) + ") "
-        + df['option_type'].str.upper().astype(str) + " "
+        # stock
+        df['description'].str.split(' ').str[0].astype(str)
+        # day
+        + " "
+        + df['description'].str.split(' ').str[2].astype(str)
+        # month
+        + "/"
+        + (df['description'].str.split(' ').str[1].astype(str)
+           .map(lambda m: lower_m.index(m.lower())).astype(str))
+        # year
+        # + "/"
+        # + df['description'].str.split(' ').str[3].str[::3].astype(str)
+        # dte
+        + " ("
+        + df['daysToExpiration'].map('{:.0f}'.format).astype(str)
+        + ") "
+        # option type put or call
+        + df['option_type'].str.upper().astype(str).str[0]
+        # short and long strike price
+        + " "
         + df['vertical'].astype(str)
     )
 
@@ -391,14 +417,14 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
     df = df[df['risk'] >= df['max_profit']]
     impact['Risk>Profit'] = f"{df.shape[0]/_shp:.0%}"
 
-    # exit if table is empty
+    # Exit if table is empty.
     if len(df.index) == 0:
         st.warning("**Nothing to see here!** Criteria not met")
         st.write("**Here's the impact of the filters you've set:**")
-        st.table(pd.DataFrame(impact.items(), ['Filter', '% of Total'])
-                   .set_index('Filter'))
-        return
+        _impact_results(impact)
+        st.stop()
 
+    # Formatting the table.
     df.sort_values('return', ascending=False, inplace=True)
     df.set_index('search', inplace=True)
     df = df[[
@@ -432,8 +458,9 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
         'stock': 'Stock',
     })
 
-    # display results
-    df_print = (df.style.background_gradient(
+    # Display results.
+    df_print = (df.style
+                  .background_gradient(
                     axis=0,
                     subset=['Return', 'Daily Return'])
                   .highlight_max(
@@ -454,7 +481,7 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
                     'Break Even': fm.DOLLAR,
                     'Qty': fm.FLOAT0 + "x",
                     'Delta': fm.FLOAT,
-                    'DTE': fm.FLOAT0
+                    'DTE': fm.FLOAT0,
                   })
                 )
 
