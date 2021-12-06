@@ -25,3 +25,5 @@ yfinance
 ipython
 state
 setuptools
+
+numba
