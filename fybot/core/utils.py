@@ -1,26 +1,28 @@
 import time
 from functools import wraps
 from memory_profiler import memory_usage
+import pandas as pd
 
 
 def performance(fn):
-    """Measure of performance for Time and Memory. NOTE: It runs the
+    """
+    Measure of performance for Time and Memory. NOTE: It runs the
     function twice, once for time, once for memory.
 
     To measure time for each method we use the built-in *time* module.
     *Perf_counter* provides the clock with the highest available resolution
     To measure *memory* consumption we use the package memory-profiler.
 
+
     Use:
+    ::
         from util import performance
 
         @util.performance
         def some_function():
             x += 1
             print(x)
-
     """
-
     @wraps(fn)
     def inner(*args, **kwargs):
         fn_kwargs_str = ', '.join(f'{k}={v}' for k, v in kwargs.items())
@@ -41,21 +43,142 @@ def performance(fn):
 
         print(f'Memory {max(mem) - min(mem)}')
         return retval
-
     return inner
 
 
-def fix_path(path_in, path_type='dir'):
-    """Fix path, including slashes.
-
-    :path_in: {str} Path to be fixed
-    :path_type: {str} 'file' or 'dir'
+def fix_path(path_in: str, path_type='dir') -> str:
     """
-    path = str(path_in)
-    path = path.replace('\\', '/')
+    Fix path, including slashes.
+
+    :param path_in: Path to be fixed.
+    :param path_type: 'file' or 'dir'
+    :return: Path with forward slashes.
+    """
+    path = str(path_in).replace('\\', '/')
     if not path.endswith("/") and path_type != "file":
-        path = path + "/"
+        path += "/"
     return path
+
+
+def timeit(method):
+    """
+    Decorator to measure Time. Like %timeit.
+
+    To measure time for each method we use the built-in *time* module.
+
+    Use:
+    ::
+        from util import timeit
+
+        @timeit
+        def some_function():
+            x += 1
+            print(x)
+    """
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+        if "log_time" in kw:
+            name = kw.get("log_name", method.__name__.upper())
+            kw["log_time"][name] = int((te - ts) * 1000)
+        else:
+            print("%r  %2.2f ms" % (method.__name__, (te - ts) * 1000))
+        return result
+    return timed
+
+
+def get_pd_memory_usage(df: pd.DataFrame or pd.Series) -> str:
+    """
+    Return the memory usage of a pandas object.
+
+    :param df: DataFrame or Series.
+    :return: String with MB used.
+    """
+    if isinstance(df, pd.DataFrame):  # It's a DataFrame
+        usage_b = df.memory_usage(deep=True).sum()
+    elif isinstance(df, pd.Series):  # It's a Series
+        usage_b = df.memory_usage(deep=True)
+    else:
+        raise TypeError("Needs to be a Panda DataFrame or Series")
+    # Transfer Byte to MByte
+    usage_mb = usage_b / 1024 ** 2
+    return f"{usage_mb:03.3f} MB"
+
+
+def optimize_pd(
+        df: pd.DataFrame or pd.Series,
+        deal_with_na: str = '',
+        verbose: bool = False) -> pd.DataFrame or pd.Series:
+    """
+    Optimizes DataFrames and Series to decrease memory usage.
+
+        * Changes dtypes to optimal, changes float series w/o decimals to int.
+        * Changes object types to category type if present in  less than 50%.
+        * Shows the impact to memory usage.
+        * (optional) Removes NaN rows or fills these with 0.
+
+    :param df: Pandas DataFrame or Series.
+    :param deal_with_na: 'fill' to fill missing values (NaN), 'drop' to drop.
+    :param verbose: Prints the changes in memory usage.
+    :return: Optimized DataFrame or Series.
+    """
+    # Initialize.
+    i_was_series = False
+    if isinstance(df, pd.Series):
+        df = df.to_frame()
+        i_was_series = True
+    elif isinstance(df, pd.DataFrame):
+        pass
+    else:
+        print(f"The dataset should either be a Dataframe or Series, "
+              f"not {df.__name__}")
+        return None
+
+    # Optional arguments.
+    if deal_with_na == 'fill':
+        df.fillna(0, inplace=True)  # fill all missing values with 0.
+    elif deal_with_na == 'drop':
+        df.dropna(axis=0, how='any')
+    else:
+        pass
+    if verbose:
+        print('Original Memory Usage: ', get_pd_memory_usage(df))
+
+    # Make sure that 'float' columns have decimals, otherwise they're integers.
+    for c in df.select_dtypes(include=['float']).dtypes.index:
+        if df[c].where(df[c] - round(df[c], 0) != 0).sum() == 0:
+            df[c] = pd.to_numeric(df[c], errors="coerce", downcast='integer')
+
+    # Changes 'int64' to 'unsigned' if positive-only or 'integer'
+    int_ser = df.select_dtypes(include=['integer']).dtypes
+    if int_ser.empty is False:
+        int_i = int_ser.index
+        dow = 'unsigned' if df[df[int_i] < 0].isna().all().all() else 'integer'
+        df[int_i] = df[int_i].apply(pd.to_numeric, downcast=dow)
+        if verbose:
+            print('Optimize -> "integer" type: ', get_pd_memory_usage(df))
+
+    # Changes 'float64' to 'float'
+    flt_ser = df.select_dtypes(include=['float']).dtypes
+    if flt_ser.empty is False:
+        flt_i = flt_ser.index
+        df[flt_i] = df[flt_i].apply(pd.to_numeric, downcast='float')
+        if verbose:
+            print('Optimize -> "float" type: ', get_pd_memory_usage(df))
+
+    # Changes 'object' to 'category' if over 50% of the series have same string
+    obj_ser = df.select_dtypes(include=['object']).dtypes
+    if obj_ser.empty is False:
+        obj_i = obj_ser.index
+        for c in obj_i:
+            if len(df[c].unique()) / len(df[c]) < 0.5:
+                df.loc[:, c] = df[c].astype('category')
+        if verbose:
+            print('Optimize -> "object" type: ', get_pd_memory_usage(df))
+
+    # Returns DataFrame or Series, depending on what came in.
+    return df.squeeze() if i_was_series else df
 
 
 class Watchlist:

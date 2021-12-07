@@ -1,3 +1,4 @@
+import os
 from typing import Dict, Optional
 from datetime import datetime, date, timedelta
 import numpy as np
@@ -7,7 +8,8 @@ from scipy.stats import norm
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
-from time import time
+
+from core.utils import optimize_pd, timeit
 
 
 def black_scholes(S: float, K, T, rf: float, iv, option_type) -> pd.DataFrame:
@@ -75,7 +77,7 @@ def black_scholes(S: float, K, T, rf: float, iv, option_type) -> pd.DataFrame:
 
     # Returns Dataframe.
     return pd.DataFrame({
-        'b_option_value': val,
+        'option_value_bs': val,
         'intrinsic_value': val_int,
         'time_value': val_time,
         'delta': delta,
@@ -96,7 +98,7 @@ def test_black_scholes():
         option_type=np.array(['call', 'put'])
     )
     _expected = {
-        'b_option_value': [2.85455546, 9.94825553],
+        'option_value_bs': [2.85455546, 9.94825553],
         'intrinsic_value': [0., 10.],
         'time_value': [2.85455546, -0.05174447],
         'delta': [0.52022482, -0.94574287],
@@ -111,12 +113,12 @@ def test_black_scholes():
 
 
 def monte_carlo(
-        S: float = 319.,
-        K: float = 350.,
-        T: int = 21,
-        rf: float = .01,
-        iv: float = .2886,
-        option_type: str = 'call',
+        S: float,
+        K: float,
+        T: int,
+        rf: float,
+        iv: float,
+        option_type: str,
         n: int = 100000,
         charts: bool = False) -> Dict[str, Optional[float]]:
     """
@@ -135,9 +137,9 @@ def monte_carlo(
     each row passed for processing. All results are summarized by a Numpy func.
 
     Usage:
-
-        >>> vector_profit_probability = np.vectorize(monte_carlo)
-        >>> pop = vector_profit_probability(
+    ::
+            vector_profit_probability = np.vectorize(monte_carlo)
+            pop = vector_profit_probability(
                 S=curr_price,
                 K=opt['strike'].to_numpy(),
                 T=opt['dte'].to_numpy(),
@@ -213,7 +215,7 @@ def monte_carlo(
 
     # Returns Dictionary.
     return {
-        'mc_option_value': val,  # Average value. Near Black Scholes Value.
+        'option_value_mc': val,  # Average value. Near Black Scholes Value.
         'value_quantile_5': np.percentile(p_last, 5),  # 5% chance below X
         'value_quantile_50': np.percentile(p_last, 50),  # 50% chance lands here.
         'value_quantile_95': np.percentile(p_last, 95),  # 5% chance above X.
@@ -262,7 +264,7 @@ def get_option_chains(ticker: str = 'AAPL'):
 
 def get_current_price(ticker):
     # Get current price data.
-    curr_price = float(
+    return float(
         pdr.DataReader(
             name=ticker,
             data_source='yahoo',
@@ -272,19 +274,18 @@ def get_current_price(ticker):
         ['Adj Close']
         [-1]
     )
-    return curr_price
 
 
 def get_ten_yr():
     # Get 10-yr risk-free rate.
-    ten_yr = float(
+    return float(
         pd.read_csv("https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10")
         ['DGS10']
         .values[-1]
     ) / 100
-    return ten_yr
 
 
+@timeit
 def main(montecarlo_iterations: int = 200):
     # During development.
     DEVELOPMENT = True
@@ -330,23 +331,8 @@ def main(montecarlo_iterations: int = 200):
         'ask': 2,
         'impliedVolatility': 4,
     })
-    opt['volume'] = opt['volume'].fillna(0).astype(int)
-    opt['openInterest'] = opt['openInterest'].fillna(0).astype(int)
-    opt = opt.astype({
-        'option_type': 'category',
-        'contractSymbol': 'string',
-        'strike': np.float16,
-        'lastPrice': np.float16,
-        'bid': np.float16,
-        'ask': np.float16,
-        'volume': np.int32,
-        'openInterest': np.int32,
-        'impliedVolatility': np.float32,
-        'inTheMoney': bool,
-        'stock': 'string',
-        'dte': np.int16
-    })
-    # 4) Sparse Columns.
+    opt = optimize_pd(opt, deal_with_na='fill', verbose=False)
+    # # 4) Sparse Columns.
     opt.dropna(axis='index', how='any', inplace=True)
     # 5) Re-index.
     opt.reset_index(drop=True, inplace=True)
@@ -363,8 +349,8 @@ def main(montecarlo_iterations: int = 200):
     opt = pd.concat([opt, bsch], axis='columns')
 
     # Probability of profits.
-    vector_profit_probability = np.vectorize(monte_carlo)
-    pop = vector_profit_probability(
+    vector_monte_carlo = np.vectorize(monte_carlo)
+    pop = vector_monte_carlo(
         S=curr_price,
         K=opt['strike'].to_numpy(),
         T=opt['dte'].to_numpy(),
@@ -373,17 +359,23 @@ def main(montecarlo_iterations: int = 200):
         option_type=opt['option_type'].to_numpy(),
         n=montecarlo_iterations
     )
+
     # Downside of pd.concat here is that it's not indexed.
     opt = pd.concat([opt, pd.json_normalize(pop.T)], axis=1)
     opt = opt.sort_values(by='contractSymbol').reset_index(drop=True)
+
+    # Diagnostic Calculations
+    opt['diff_last_val_bs'] = opt['option_value_bs'] / opt['lastPrice'] - 1
+    opt['diff_last_val_mc'] = opt['option_value_mc'] / opt['lastPrice'] - 1
+    opt['diff_val_mc_to_bs'] = opt['option_value_mc'] / opt['option_value_bs'] - 1
 
     return opt
 
 
 if __name__ == '__main__':
-    s = time()
     result = main(montecarlo_iterations=500)
-    # test_black_scholes()
-    e = time()
-    print(f"Time: {e - s}")
-    # result.to_excel('test.xlsx')
+    print(result)
+    try:
+        result.to_excel('test.xlsx')
+    except Exception:
+        pass
