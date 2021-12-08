@@ -204,10 +204,7 @@ def app():
             _default = st.session_state['strategy_selected']
         strategy = col1.multiselect(
             label="Option Strategy(ies)",
-            options=[
-                'naked',
-                'spread'
-            ],
+            options=['naked', 'spread'],
             default=_default,
             help="Strategies to be analyzed, i.e. naked, spread, condor",
             key="strategy_selected",
@@ -227,10 +224,10 @@ def app():
             _index = 2
         params['FILTERS']['option_type'] = col1.selectbox(
             label="Option type",
-            options=['put', 'call', 'put,call'],
+            options=['Put', 'Call', 'Put,Call'],
             help="Type of option to analyze",
             index=_index,
-        )
+        ).lower()
 
         # Days to expiration
         params['FILTERS']['max_dte'] = col2.number_input(
@@ -271,16 +268,15 @@ def app():
         )
 
         # How wide is the maximum margin requirement?
-        if 'spread' in params['FILTERS']['strategies']:
-            params['FILTERS']['margin_requirement'] = col1.number_input(
-                label="Margin requirement allowed",
-                min_value=0.,
-                step=100.,
-                value=float(params['FILTERS']['margin_requirement']),
-                help="Maximum margin allowed for spread strategy. "
-                     "Larger margin means larger capital required. "
-                     "Margin is the difference between strike prices."
-            )
+        params['FILTERS']['margin_requirement'] = col1.number_input(
+            label="Margin requirement allowed",
+            min_value=0.,
+            step=100.,
+            value=float(params['FILTERS']['margin_requirement']),
+            help="Maximum margin allowed for spread strategy. "
+                 "Larger margin means larger capital required. "
+                 "Margin is the difference between strike prices."
+        )
 
         # Delta maximum
         params['FILTERS']['max_delta'] = col3.number_input(

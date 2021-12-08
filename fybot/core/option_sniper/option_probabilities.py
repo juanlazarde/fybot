@@ -1,4 +1,4 @@
-import os
+import sys
 from typing import Dict, Optional
 from datetime import datetime, date, timedelta
 import numpy as np
@@ -8,8 +8,14 @@ from scipy.stats import norm
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
+import time
 
-from core.utils import optimize_pd, timeit
+from core.utils import optimize_pd, timeit, lineprofile
+
+# s=time.time()
+# e=time.time()
+# print(f"Time: {e-s:.6f}")
+# sys.exit()
 
 
 def black_scholes(S: float, K, T, rf: float, iv, option_type) -> pd.DataFrame:
@@ -171,7 +177,10 @@ def monte_carlo(
     D = np.exp(-rf * (T / 252))
 
     # Randomized array of number of days x simulations, based of current price.
-    P = np.cumprod(1 + np.random.randn(n, T) * iv / np.sqrt(252), axis=1) * S
+    # P = np.cumprod(1 + np.random.randn(n, T) * iv / np.sqrt(252), axis=1) * S
+    rng = np.random.Generator(np.random.PCG64())
+    rnd = rng.standard_normal((n, T), dtype=np.float32)
+    P = np.cumprod(1 + rnd * iv / np.sqrt(252), axis=1) * S
 
     # Series on last day of simulation with premium difference.
     p_last = P[:, -1] - K * D
@@ -216,9 +225,9 @@ def monte_carlo(
     # Returns Dictionary.
     return {
         'option_value_mc': val,  # Average value. Near Black Scholes Value.
-        'value_quantile_5': np.percentile(p_last, 5),  # 5% chance below X
-        'value_quantile_50': np.percentile(p_last, 50),  # 50% chance lands here.
-        'value_quantile_95': np.percentile(p_last, 95),  # 5% chance above X.
+        # 'value_quantile_5': np.percentile(p_last, 5),  # 5% chance below X
+        # 'value_quantile_50': np.percentile(p_last, 50),  # 50% chance lands here.
+        # 'value_quantile_95': np.percentile(p_last, 95),  # 5% chance above X.
         'probability_ITM': pop_ITM,  # Probability of ending ITM.
         'probability_of_50': p50,  # Probability of makeing half profit.
     }
@@ -373,8 +382,8 @@ def main(montecarlo_iterations: int = 200):
 
 
 if __name__ == '__main__':
-    result = main(montecarlo_iterations=500)
-    print(result)
+    result = main(montecarlo_iterations=10000)
+    print(result.head(5))
     try:
         result.to_excel('test.xlsx')
     except Exception:

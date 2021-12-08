@@ -653,3 +653,7 @@ venv/share/
 /fybot/config/config.py
 *tmp_*
 /excluded_resources/
+!/fybot/core/option_sniper/prob_price.pkl
+!/fybot/core/option_sniper/test_old.xlsx
+!/fybot/core/option_sniper/test.xlsx
+

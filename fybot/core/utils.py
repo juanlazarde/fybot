@@ -181,6 +181,33 @@ def optimize_pd(
     return df.squeeze() if i_was_series else df
 
 
+def lineprofile(func):
+    """
+    Line Profile decorator shows time usage per line.
+
+    Use:
+    ::
+        from utils import lineprofile
+
+        @lineprofile
+        def function_to_profile(numbers):
+            do_something = numbers
+
+    """
+    from functools import wraps
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        from line_profiler import LineProfiler
+        prof = LineProfiler()
+        try:
+            return prof(func)(*args, **kwargs)
+        finally:
+            prof.print_stats()
+
+    return wrapper
+
+
 class Watchlist:
     """Functions to be used with watchlists and symbols
     Returns the final watchlist to be used.
