@@ -203,3 +203,37 @@ def progressbar(it, prefix="", size=60, file=sys.stdout):
         show(i + 1)
     file.write("\n")
     file.flush()
+
+
+def run_once(f):
+    """Runs part of the code once.
+
+    https://stackoverflow.com/questions/4103773/efficient-way-of-having-a-function-only-execute-once-in-a-loop
+
+    Usage:
+    ::
+        @run_once
+        def monte_carlo(...):
+
+        or
+
+        action = run_once(my_function)
+        while 1:
+            if predicate:
+                action()
+
+        or
+
+        action = run_once(my_function)
+        action() # run once the first time
+
+        action.has_run = False
+        action() # run once the second time
+
+    """
+    def wrapper(*args, **kwargs):
+        if not wrapper.has_run:
+            wrapper.has_run = True
+            return f(*args, **kwargs)
+    wrapper.run = False
+    return wrapper

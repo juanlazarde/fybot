@@ -1,5 +1,4 @@
-import sys
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 from datetime import datetime, date, timedelta
 import numpy as np
 import pandas_datareader as pdr
@@ -8,10 +7,11 @@ from scipy.stats import norm
 import pandas as pd
 import pickle
 import matplotlib.pyplot as plt
-import time
+import threading
 
 from core.utils import optimize_pd, timeit, lineprofile
 
+import sys, time
 # s=time.time()
 # e=time.time()
 # print(f"Time: {e-s:.6f}")
@@ -126,6 +126,7 @@ def monte_carlo(
         iv: float,
         option_type: str,
         n: int = 100000,
+        rng: Any = None,
         charts: bool = False) -> Dict[str, Optional[float]]:
     """
     Monte Carlo modeling function.
@@ -150,8 +151,9 @@ def monte_carlo(
                 K=opt['strike'].to_numpy(),
                 T=opt['dte'].to_numpy(),
                 rf=ten_yr,
-                iv=opt['impliedVolatility'].to_numpy(),
+                iv=opt['volatility'].to_numpy(),
                 option_type=opt['option_type'].to_numpy(),
+                rng=rng,
                 n=1000
             )
 
@@ -162,6 +164,7 @@ def monte_carlo(
     :param iv: Volatility (decimal).
     :param option_type: Calls or Puts option type.
     :param n: Number of Monte Carlo iterantions. min 100,000 recommended.
+    :param rng: Random range generator, used when in loops.
     :param charts: Visualize charts.
     :return: Dictionary with keys: value, greeks.
      Value has 'option_value', 'intrinsic_value', and 'time_value'.
@@ -178,7 +181,8 @@ def monte_carlo(
 
     # Randomized array of number of days x simulations, based of current price.
     # P = np.cumprod(1 + np.random.randn(n, T) * iv / np.sqrt(252), axis=1) * S
-    rng = np.random.Generator(np.random.PCG64())
+    # Generating random range is expensive, so doing it once.
+    rng = np.random.Generator(np.random.PCG64()) if rng is None else rng
     rnd = rng.standard_normal((n, T), dtype=np.float32)
     P = np.cumprod(1 + rnd * iv / np.sqrt(252), axis=1) * S
 
@@ -245,29 +249,35 @@ def get_option_chains(ticker: str = 'AAPL'):
     dtes = [(datetime.strptime(i, '%Y-%m-%d').date() - date.today()).days
             for i in yft.options]
     dtes_dict = dict(zip(yft.options, dtes))
+
     for i in yft.options:
         opt_tuple = yft.option_chain(i)
-
-        opt_single = (pd.concat(
+        opt_single = pd.concat(
             [opt_tuple.calls, opt_tuple.puts],
             keys=['calls', 'puts'],
-            names=['option_type']
-        )
-                      .reset_index()
-                      .drop('level_1', axis=1)
-                      )
-        opt_single['stock'] = ticker
-        opt_single['expirationDate'] = np.datetime64(i)
-        opt_single['dte'] = dtes_dict[i]
+            names=['option_type'])
+        opt_single.reset_index(inplace=True)
+        opt_single.drop('level_1', axis=1, inplace=True)
+        opt_single['symbol'] = ticker
+        opt_single['daysToExpiration'] = dtes_dict[i]
         opt = pd.concat([opt, opt_single])
+
     opt.reset_index(drop=True, inplace=True)
-    opt = opt.drop([
+    opt.drop([
         'contractSize',
         'currency',
         'change',
         'percentChange',
-        'lastTradeDate'
-    ], axis=1)
+        'lastTradeDate',
+    ], axis=1, inplace=True)
+
+    # Match TDA labels
+    opt.rename(columns={
+        'lastPrice': 'last',
+        'volume': 'totalVolume',
+        'impliedVolatility': 'volatility',
+        'strike': 'strikePrice',
+    }, inplace=True)
     return opt
 
 
@@ -294,14 +304,119 @@ def get_ten_yr():
     ) / 100
 
 
-@timeit
+def massage_options_table(opt: pd.DataFrame) -> pd.DataFrame:
+    # Option processing begins here.
+    opt = opt.copy()
+
+    # Prep DataFrame for Performance:
+    # 1) Filter out columns,
+    # 2) Filter out rows,
+    opt = opt[
+        (opt['openInterest'] > 0)
+        & (opt['totalVolume'] > 0)
+        & (opt['bid'] > 0)
+        & (opt['ask'] > 0)
+        & (opt['volatility'].round(8).values > 0)
+    ]
+    # TODO: Remove rows too far away from the mean.
+
+    # 3) Lower-range numerical and categoricals dtypes,
+    opt = opt.round({
+        'last': 2,
+        'bid': 2,
+        'ask': 2,
+        'volatility': 4,
+    })
+    opt = optimize_pd(opt, deal_with_na='fill', verbose=False)
+    # 4) Sparse Columns.
+    opt.dropna(axis='index', how='any', inplace=True)
+    # 5) Re-index.
+    opt.reset_index(drop=True, inplace=True)
+
+    return opt
+
+
+def mc_numpy_vector(*args):
+    curr_price, opt, ten_yr, rng, montecarlo_iterations = args
+    vector_monte_carlo = np.vectorize(monte_carlo)
+    _pop = vector_monte_carlo(
+        S=curr_price,
+        K=opt['strikePrice'].to_numpy(),
+        T=opt['daysToExpiration'].to_numpy(),
+        rf=ten_yr,
+        iv=opt['volatility'].to_numpy(),
+        option_type=opt['option_type'].to_numpy(),
+        rng=rng,
+        n=montecarlo_iterations
+    )
+    return pd.json_normalize(_pop.T)
+
+
+def mc_threading(*args):
+    def threader(curr_price, opt, ten_yr, rng, montecarlo_iterations):
+        vector_monte_carlo = np.vectorize(monte_carlo)
+        _pop = vector_monte_carlo(
+            S=curr_price,
+            K=opt['strikePrice'].to_numpy(),
+            T=opt['daysToExpiration'].to_numpy(),
+            rf=ten_yr,
+            iv=opt['volatility'].to_numpy(),
+            option_type=opt['option_type'].to_numpy(),
+            rng=rng,
+            n=montecarlo_iterations
+        )
+        rez.append(_pop)
+
+    rez = []
+    t = threading.Thread(target=threader, args=args[:5])
+    t.start()
+    t.join()
+    return pd.DataFrame.from_records(rez[0])
+
+
+def mc_multi_threading(*args):
+    def threader(curr_price, opt, ten_yr, rng, montecarlo_iterations):
+        vector_monte_carlo = np.vectorize(monte_carlo)
+        _pop = vector_monte_carlo(
+            S=curr_price,
+            K=opt['strikePrice'].to_numpy(),
+            T=opt['daysToExpiration'].to_numpy(),
+            rf=ten_yr,
+            iv=opt['volatility'].to_numpy(),
+            option_type=opt['option_type'].to_numpy(),
+            rng=rng,
+            n=montecarlo_iterations
+        )
+        rez.append(_pop)
+
+    rez = []
+    _curr_price, _opt, _ten_yr, _rng, _montecarlo_iterations, _threads = args
+    df_split = np.array_split(_opt, _threads)
+    threads = []
+    for df in df_split:
+        t = threading.Thread(
+                target=threader,
+                args=(_curr_price, df, _ten_yr, _rng, _montecarlo_iterations)
+            )
+        threads.append(t)
+        t.start()
+
+    for thread in threads:
+        thread.join()
+
+    return pd.DataFrame.from_records(rez[0])
+
+
+# @timeit
+# @lineprofile
 def main(montecarlo_iterations: int = 200):
     # During development.
-    DEVELOPMENT = True
+    DEVELOPMENT = False
 
     data = ()
     if DEVELOPMENT:
         try:
+            print("Loading file with options")
             with open('prob_price.pkl', 'rb') as f:
                 data = pickle.load(f)
             assert len(data) != 0, "Datafile is empty."
@@ -324,67 +439,55 @@ def main(montecarlo_iterations: int = 200):
         with open('prob_price.pkl', 'wb') as f:
             pickle.dump(data, f)
 
-    # Option processing begins here.
-    opt = option_chain.copy()
-
-    # Prep DataFrame for Performance:
-    # 1) Filter out columns,
-    opt.drop(labels=['expirationDate'], axis='columns', inplace=True)
-    # 2) Filter out rows,
-    opt = opt.loc[opt['impliedVolatility'].round(8).values > 0]
-    # 3) Lower-range numerical and categoricals dtypes,
-    curr_price = round(curr_price, 2)
-    opt = opt.round({
-        'lastPrice': 2,
-        'bid': 2,
-        'ask': 2,
-        'impliedVolatility': 4,
-    })
-    opt = optimize_pd(opt, deal_with_na='fill', verbose=False)
-    # # 4) Sparse Columns.
-    opt.dropna(axis='index', how='any', inplace=True)
-    # 5) Re-index.
-    opt.reset_index(drop=True, inplace=True)
+    # Optimize Options Table before heavy processing.
+    opt = massage_options_table(option_chain)
 
     # Black Scholes data here. Option value, greeks.
     bsch = black_scholes(
         S=curr_price,
-        K=opt['strike'].to_numpy(),
-        T=opt['dte'].to_numpy(),
+        K=opt['strikePrice'].to_numpy(),
+        T=opt['daysToExpiration'].to_numpy(),
         rf=ten_yr,
-        iv=opt['impliedVolatility'].to_numpy(),
+        iv=opt['volatility'].to_numpy(),
         option_type=opt['option_type'].to_numpy()
     )
     opt = pd.concat([opt, bsch], axis='columns')
 
     # Probability of profits.
-    vector_monte_carlo = np.vectorize(monte_carlo)
-    pop = vector_monte_carlo(
-        S=curr_price,
-        K=opt['strike'].to_numpy(),
-        T=opt['dte'].to_numpy(),
-        rf=ten_yr,
-        iv=opt['impliedVolatility'].to_numpy(),
-        option_type=opt['option_type'].to_numpy(),
-        n=montecarlo_iterations
-    )
+    msg = f" {len(opt['daysToExpiration'].unique())} DTE's x {montecarlo_iterations} iterations"
+    rng = np.random.Generator(np.random.PCG64())  # Generating random range is expensive, so doing it once.
 
-    # Downside of pd.concat here is that it's not indexed.
-    opt = pd.concat([opt, pd.json_normalize(pop.T)], axis=1)
+    # 1) Simple version
+    print("Numpy Vector" + msg)
+    pop = mc_numpy_vector(curr_price, opt, ten_yr, rng, montecarlo_iterations)
+
+    # 2) Threading. One thread
+    print(f"Threading" + msg)
+    pop = mc_threading(curr_price, opt, ten_yr, rng, montecarlo_iterations, 1)
+
+    # 3) Multiple Threads.
+    threads = 4
+    print(f"Multi Threading" + msg)
+    pop = mc_multi_threading(curr_price, opt, ten_yr, rng, montecarlo_iterations, threads)
+
+    # ^^^^^ Receives result from Pop
+    opt = pd.concat([opt, pop], axis=1)
     opt = opt.sort_values(by='contractSymbol').reset_index(drop=True)
 
     # Diagnostic Calculations
-    opt['diff_last_val_bs'] = opt['option_value_bs'] / opt['lastPrice'] - 1
-    opt['diff_last_val_mc'] = opt['option_value_mc'] / opt['lastPrice'] - 1
+    opt['diff_last_val_bs'] = opt['option_value_bs'] / opt['last'] - 1
+    opt['diff_last_val_mc'] = opt['option_value_mc'] / opt['last'] - 1
     opt['diff_val_mc_to_bs'] = opt['option_value_mc'] / opt['option_value_bs'] - 1
 
+    print('Done')
     return opt
 
 
 if __name__ == '__main__':
-    result = main(montecarlo_iterations=10000)
+    result = main(montecarlo_iterations=500)
     print(result.head(5))
+    print(result.shape)
     try:
-        result.to_excel('test.xlsx')
+        result.to_excel('test.xlsx', float_format="%.2f", index=False, freeze_panes=(1, 20))
     except Exception:
-        pass
+        print("Error saving test.xlsx.")
