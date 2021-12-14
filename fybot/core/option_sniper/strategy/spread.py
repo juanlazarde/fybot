@@ -202,6 +202,8 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
         'max_dte': int(filters['max_dte']),
         'min_dte': int(filters['min_dte']),
         'max_delta': float(filters['max_delta']),
+        'min_pop': float(filters['min_pop']) / 100,
+        'min_p50': float(filters['min_p50']) / 100,
         'min_open_int_pctl': float(filters['min_open_int_pctl']) / 100,
         'min_volume_pctl': float(filters['min_volume_pctl']) / 100,
         'max_bid_ask_pctl': float(filters['max_bid_ask_pctl']) / 100
@@ -212,8 +214,8 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
     # Clean table.
     # Comment out columns to keep.
     df.drop(inplace=True, columns=[
-        'putCall',
-        'symbol',
+        # 'putCall',
+        # 'symbol',
         # 'description',
         'exchangeName',
         # 'bid',
@@ -263,8 +265,8 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
         'nonStandard'
     ])
     df.reset_index(inplace=True)
+    df.sort_values(by='symbol', ascending=True, inplace=True)
     df.drop(columns=['symbol'], inplace=True)  # Actual option's symbol.
-    df.sort_values(by='stock', ascending=True, inplace=True)
 
     # Filter: Pass 1. Before cross-calculation.
     df = df[(df['delta'] != 'NaN')
@@ -335,6 +337,10 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
         'daysToExpiration',
         'multiplier',
         # 'inTheMoney',
+        # 'lastPrice',
+        'option_value_mc',
+        'probability_ITM',
+        'probability_of_50',
         # 'bid_ask_pct',
         # 'bid_ask_rank',
         # 'open_int_rank',
@@ -405,6 +411,12 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
     )
 
     # More filters
+    df = df[df['probability_ITM'] >= d['min_pop']]
+    impact['Prob of Profit (ITM)'] = f"{df.shape[0]/_shp:.0%}"
+
+    df = df[df['probability_of_50'] >= d['min_p50']]
+    impact['Prob of 50% Profit (ITM)'] = f"{df.shape[0]/_shp:.0%}"
+
     df = df[df['margin_requirement'] <= d['margin_requirement']]
     impact['Margin requirement'] = f"{df.shape[0]/_shp:.0%}"
 
@@ -439,6 +451,10 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
         # 'prem_sprd_ratio',
         'break_even',
         'delta',
+        # 'lastPrice',
+        'option_value_mc',
+        'probability_ITM',
+        'probability_of_50',
         'daysToExpiration',
         'stock'
     ]]
@@ -449,25 +465,32 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
         'risk': 'Risk',
         'quantity': 'Qty',
         'margin_requirement': 'Margin Req\'d',
-        'prem_mark': 'Premium Mark',
+        'prem_mark': 'Prem Mark',
         # 'prem_bid_ask': 'Premium Bid/Ask',
         # 'prem_sprd_ratio': 'Premium Spread Ratio',
         'break_even': 'Break Even',
         'delta': 'Delta',
+        'option_value_mc': 'Theo Value',
+        'probability_ITM': 'Prob ITM',
+        'probability_of_50': 'Prob 50%',
         'daysToExpiration': 'DTE',
         'stock': 'Stock',
     })
 
     # Display results.
+    min_max = ['Return', 'Max Profit', 'Daily Return', 'Prob ITM', 'Prob 50%']
     df_print = (df.style
+                  .set_table_styles(
+                    [dict(selector='th', props=[('text-align', 'left')])])
+                  .set_properties(**{'text-align': 'right'})
                   .background_gradient(
                     axis=0,
                     subset=['Return', 'Daily Return'])
                   .highlight_max(
-                    subset=['Return', 'Max Profit', 'Daily Return'],
+                    subset=min_max,
                     color=fm.HI_MAX_COLOR)
                   .highlight_min(
-                    subset=['Return', 'Max Profit', 'Daily Return'],
+                    subset=min_max,
                     color=fm.HI_MIN_COLOR)
                   .format({
                     'Return': fm.PERCENT2,
@@ -475,12 +498,15 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
                     'Max Profit': fm.DOLLAR,
                     'Risk': fm.DOLLAR,
                     'Margin Req\'d': fm.DOLLAR,
-                    'Premium Mark': fm.DOLLAR,
+                    'Prem Mark': fm.DOLLAR,
                     # 'Premium Bid/Ask': fm.DOLLAR,
                     # 'Premium Spread Ratio': fm.DOLLAR,
                     'Break Even': fm.DOLLAR,
                     'Qty': fm.FLOAT0 + "x",
                     'Delta': fm.FLOAT,
+                    'Theo Value': fm.DOLLAR,
+                    'Prob ITM': fm.PERCENT0,
+                    'Prob 50%': fm.PERCENT0,
                     'DTE': fm.FLOAT0,
                   })
                 )

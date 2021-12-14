@@ -36,6 +36,8 @@ def naked(df_in: pd.DataFrame, filters: dict) -> pd.DataFrame:
         'max_dte': int(filters['max_dte']),
         'min_dte': int(filters['min_dte']),
         'max_delta': float(filters['max_delta']),
+        'min_pop': float(filters['min_pop']) / 100,
+        'min_p50': float(filters['min_p50']) / 100,
         'min_open_int_pctl': float(filters['min_open_int_pctl']) / 100,
         'min_volume_pctl': float(filters['min_volume_pctl']) / 100,
         'max_bid_ask_pctl': float(filters['max_bid_ask_pctl']) / 100
@@ -46,8 +48,8 @@ def naked(df_in: pd.DataFrame, filters: dict) -> pd.DataFrame:
     # Clean table.
     # Comment out columns to keep.
     df.drop(inplace=True, columns=[
-        'putCall',
-        'symbol',
+        # 'putCall',
+        # 'symbol',
         # 'description',
         'exchangeName',
         # 'bid',
@@ -97,8 +99,8 @@ def naked(df_in: pd.DataFrame, filters: dict) -> pd.DataFrame:
         'nonStandard'
     ])
     df.reset_index(inplace=True)
+    df.sort_values(by='symbol', ascending=True, inplace=True)
     df.drop(columns=['symbol'], inplace=True)  # Actual option's symbol.
-    df.sort_values(by='stock', ascending=True, inplace=True)
 
     # Filter: Pass 1. Before calculation.
     df = df[(df['delta'] != 'NaN')
@@ -123,6 +125,12 @@ def naked(df_in: pd.DataFrame, filters: dict) -> pd.DataFrame:
     df = df[(df['delta'] <= d['max_delta'])
             & (df['delta'] >= -d['max_delta'])]
     impact['Delta'] = f"{df.shape[0] / _shp:.0%}"
+
+    df = df[df['probability_ITM'] >= d['min_pop']]
+    impact['Prob of Profit (ITM)'] = f"{df.shape[0]/_shp:.0%}"
+
+    df = df[df['probability_of_50'] >= d['min_p50']]
+    impact['Prob of 50% Profit (ITM)'] = f"{df.shape[0]/_shp:.0%}"
 
     df = df[(df['daysToExpiration'] >= d['min_dte'])
             & (df['daysToExpiration'] <= d['max_dte'])]
@@ -208,6 +216,10 @@ def naked(df_in: pd.DataFrame, filters: dict) -> pd.DataFrame:
         'mark',
         'break_even',
         'delta',
+        # 'lastPrice',
+        'option_value_mc',
+        'probability_ITM',
+        'probability_of_50',
         # 'volatility',
         'daysToExpiration',
         'stock'
@@ -219,24 +231,31 @@ def naked(df_in: pd.DataFrame, filters: dict) -> pd.DataFrame:
         'risk': 'Risk',
         'quantity': 'Qty',
         'margin_requirement': 'Margin Req\'d',
-        'mark': 'Mark',
+        'mark': 'Prem Mark',
         'break_even': 'Break Even',
         'delta': 'Delta',
+        'option_value_mc': 'Theo Value',
+        'probability_ITM': 'Prob ITM',
+        'probability_of_50': 'Prob 50%',
         # 'volatility': 'IV',
         'daysToExpiration': 'DTE',
         'stock': 'Stock',
     })
 
     # Display results.
+    min_max = ['Return', 'Max Profit', 'Daily Return', 'Prob ITM', 'Prob 50%']
     df_print = (df.style
+                  .set_table_styles(
+                    [dict(selector='th', props=[('text-align', 'left')])])
+                  .set_properties(**{'text-align': 'right'})
                   .background_gradient(
                     axis=0,
                     subset=['Return', 'Daily Return'])
                   .highlight_max(
-                    subset=['Return', 'Max Profit', 'Daily Return'],
+                    subset=min_max,
                     color=fm.HI_MAX_COLOR)
                   .highlight_min(
-                    subset=['Return', 'Max Profit', 'Daily Return'],
+                    subset=min_max,
                     color=fm.HI_MIN_COLOR)
                   .format({
                     'Return': fm.PERCENT2,
@@ -246,8 +265,11 @@ def naked(df_in: pd.DataFrame, filters: dict) -> pd.DataFrame:
                     'Margin Req\'d': fm.DOLLAR,
                     'Break Even': fm.DOLLAR,
                     'Qty': fm.FLOAT0 + "x",
-                    'Mark': fm.DOLLAR,
+                    'Prem Mark': fm.DOLLAR,
                     'Delta': fm.FLOAT,
+                    'Theo Value': fm.DOLLAR,
+                    'Prob ITM': fm.PERCENT0,
+                    'Prob 50%': fm.PERCENT0,
                     'DTE': fm.FLOAT0,
                     # 'IV': fm.FLOAT0
                   })

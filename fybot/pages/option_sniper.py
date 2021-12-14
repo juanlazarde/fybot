@@ -288,6 +288,26 @@ def app():
             help="Maximum Delta for the option (1.00 is the max)"
         )
 
+        # Probability of Profit minimum
+        params['FILTERS']['min_pop'] = col3.number_input(
+            label="Probability of Profit minimum",
+            min_value=0.,
+            max_value=100.,
+            step=.01,
+            value=float(params['FILTERS']['min_pop']),
+            help="Minimum probability to make at least $0.01"
+        )
+
+        # Probability of 50% Profit minimum
+        params['FILTERS']['min_p50'] = col3.number_input(
+            label="Probability of 50% Profit minimum",
+            min_value=0.,
+            max_value=100.,
+            step=.01,
+            value=float(params['FILTERS']['min_p50']),
+            help="Minimum probability to make at least 50% of total profit"
+        )
+
         # Volume, Open Interest, bid/ask percentile
         params['FILTERS']['min_volume_pctl'] = col3.number_input(
             label="Volume percentile",

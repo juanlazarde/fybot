@@ -4,7 +4,6 @@ Personalized data, like passwords, are set in config.py"""
 import os
 import config.config as config
 
-
 # FOR DEBUG ONLY
 DEBUG = False
 MAX_SYMBOLS = 150 if DEBUG else None
@@ -67,7 +66,7 @@ DEFAULT_FILTERS = {'consolidating': {'go': False, 'pct': 6.0},
                    'sma_filter': {'go': False, 'fast': 25, 'slow': 100},
                    'ema_stacked': {'go': True},
                    'investor_reco': {'go': False}
-                   }
+}
 
 # news.py settings
 NEWS = {
@@ -106,6 +105,8 @@ OPTION_SNIPER = {
         'strategies': "spread",
         'option_type': "put, call",
         'max_delta': 0.30,
+        'min_pop': 0.,
+        'min_p50': 0.,
         'min_volume_pctl': 5.,
         'min_open_int_pctl': 5.,
         'max_bid_ask_pctl': 50.,

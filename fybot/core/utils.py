@@ -107,7 +107,7 @@ def get_pd_memory_usage(df: pd.DataFrame or pd.Series) -> str:
 
 
 def optimize_pd(
-        df: pd.DataFrame or pd.Series,
+        df_in: pd.DataFrame or pd.Series,
         deal_with_na: str = '',
         verbose: bool = False) -> pd.DataFrame or pd.Series:
     """
@@ -118,12 +118,13 @@ def optimize_pd(
         * Shows the impact to memory usage.
         * (optional) Removes NaN rows or fills these with 0.
 
-    :param df: Pandas DataFrame or Series.
+    :param df_in: Pandas DataFrame or Series.
     :param deal_with_na: 'fill' to fill missing values (NaN), 'drop' to drop.
     :param verbose: Prints the changes in memory usage.
     :return: Optimized DataFrame or Series.
     """
     # Initialize.
+    df = df_in.copy()
     i_was_series = False
     if isinstance(df, pd.Series):
         df = df.to_frame()

@@ -3,6 +3,7 @@ import sys
 import asyncio
 import json
 import logging
+import streamlit as st
 
 from tda.auth import easy_client as tda_connection
 from tda.streaming import StreamClient
@@ -16,44 +17,67 @@ log = logging.getLogger(__name__)
 class TDA:
     client = None
 
-    def __init__(self, asyncio_bool: bool = False):
-        """Connects with TDA database using TDA-API.
-
-        :param asyncio_bool: If True TDA runs in Asyncio mode
+    def __init__(self, is_asyncio: bool = False):
         """
+        Connects with TDA database using TDA-API.
 
+        :param is_asyncio: If True TDA runs in Asyncio mode.
+        :return: TDA 'client' connection.
+        """
         API_KEY = ss.TDA_API_KEY
         REDIRECT_URL = ss.TDA_REDIRECT_URI
         TOKEN = ss.TDA_TOKEN
+        self.establish_client(API_KEY, REDIRECT_URL, TOKEN, is_asyncio)
 
+    def establish_client(
+            self,
+            API_KEY: str,
+            REDIRECT_URL: str,
+            TOKEN: str,
+            is_asyncio: bool):
+        """
+        Establish Client connection with TDA API.
+
+        :param is_asyncio: True to run TDA in Asyncio mode.
+        :param API_KEY: TDA API key or Client ID.
+        :param REDIRECT_URL: URL set with TDA's API account.
+        :param TOKEN: Path where the token is located.
+        :return: TDA Connection.
+        """
         try:
-            self.client = tda_connection(api_key=API_KEY,
-                                         redirect_uri=REDIRECT_URL,
-                                         token_path=TOKEN,
-                                         webdriver_func=self.webdriver,
-                                         asyncio=asyncio_bool)
+            self.client = tda_connection(
+                api_key=API_KEY,
+                redirect_uri=REDIRECT_URL,
+                token_path=TOKEN,
+                webdriver_func=self.webdriver,
+                asyncio=is_asyncio
+            )
         except Exception as e:
-            print("\nTDA authorization ERROR.\n" + str(e) +
-                  "\nEstablishing authorization via Chrome")
+            print(f"\nTDA authorization ERROR.\n{e}"
+                  f"\nEstablishing authorization via Chrome")
 
             log.info("\nTDA error. Establishing authorization via Chrome")
 
             try:
-                cont = input("Delete token file? Y/N: ")
+                delete = input("Delete token file? Y/N: ")
 
-                if cont[0].strip().upper() == "Y":
+                if delete[0].strip().upper() == "Y":
                     if os.path.isfile(TOKEN):
                         os.remove(TOKEN)
-                    self.client = tda_connection(api_key=API_KEY,
-                                                 redirect_uri=REDIRECT_URL,
-                                                 token_path=TOKEN,
-                                                 webdriver_func=self.webdriver,
-                                                 asyncio=asyncio_bool)
+                    self.client = tda_connection(
+                        api_key=API_KEY,
+                        redirect_uri=REDIRECT_URL,
+                        token_path=TOKEN,
+                        webdriver_func=self.webdriver,
+                        asyncio=is_asyncio
+                    )
                 else:
                     raise
 
             except Exception as e:
-                log.critical(f"\nTDA authorization ERROR.\n{e}")
+                msg = f"\nTDA authorization ERROR.\n{e}"
+                log.critical(msg)
+                st.critical(msg)
                 sys.exit(e)
 
         log.info("Established TDA Ameritrade connection")
