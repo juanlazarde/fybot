@@ -1,6 +1,7 @@
 import time
 from functools import wraps
 from memory_profiler import memory_usage
+from line_profiler.line_profiler import LineProfiler
 import pandas as pd
 
 
@@ -105,7 +106,6 @@ def lineprofile(func):
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        from line_profiler import LineProfiler
         prof = LineProfiler()
         try:
             return prof(func)(*args, **kwargs)
@@ -201,7 +201,7 @@ def optimize_pd(
     if obj_ser.empty is False:
         obj_i = obj_ser.index
         for c in obj_i:
-            # Skip conversion fi there're any numbres in the series.
+            # Skip conversion ii there're any numbers in the series.
             if df[c].apply(lambda x: isinstance(x, (float, int))).any():
                 continue
             # If more than 50% of the series are unique then categorize.

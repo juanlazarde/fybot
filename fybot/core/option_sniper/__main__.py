@@ -78,12 +78,9 @@ class GetOptions:
         opt = self.options.copy()
         # Measure it:
         # print(f"{sum(opt.memory_usage(deep=True))/1024:,.2f}Kb")
-        opt.replace(["", " ", None], float('NaN'), inplace=True)
+        opt.replace(["", " ", None, "NaN"], float('NaN'), inplace=True)
         opt.dropna(axis='columns', how='all', inplace=True)
         opt = optimize_pd(opt, deal_with_na='drop', verbose=False)
-        # a = opt['volatility'][~opt['volatility'].apply(lambda x: isinstance(x, float))]
-        # if opt['volatility'][opt['volatility'].apply(lambda x: isinstance(x, float))].all():
-        #     print(a)
         opt['volatility'] = opt['volatility'] / 100.
         opt = opt[
             (opt['openInterest'] > 0) &
