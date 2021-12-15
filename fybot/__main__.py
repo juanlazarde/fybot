@@ -40,7 +40,7 @@ def _helpme():
                 
                 FyBot is a Finacial tool to analyze stocks and options.
                 
-                1) Install:
+                1) Install: (creates: config/config.py & account.key)
                     $ python fybot setup
 
                 2) Create tables in database or to reset all tables (careful!):
@@ -59,11 +59,14 @@ def _setup():
 
         $ python fybot setup
     """
-    # TODO: Not working yet
+    # TODO: Testing config creation
     if sys.argv[1] in ["setup", "s", "set", "config", "configurar", "-setup",
-                       "--setup", "-s", "--s", "/s", "/setup"]:
+                       "--setup", "-s", "--s", "/s", "/setup", "-config",
+                       "-configurar"]:
 
-        print('Setup Not working yet')
+        import core.create_config
+        core.create_config.run(r'config.py')
+        sys.exit(0)
 
 
 def _error_handling(error: Exception or str) -> None:

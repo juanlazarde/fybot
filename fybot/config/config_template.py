@@ -2,7 +2,7 @@
 # Do not share this file with anyone, do not post
 
 # Profile
-NAME = "<YOUR NAME"
+NAME = "<YOUR NAME>"
 EMAIL = "<YOUR EMAIL>"
 
 # Database info
