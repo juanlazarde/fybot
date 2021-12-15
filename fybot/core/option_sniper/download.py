@@ -1,5 +1,7 @@
 """Options functions for the Sniper."""
 from datetime import date
+
+import httpx
 import streamlit as st
 
 import numpy as np
@@ -23,26 +25,47 @@ def get_all_tables(tda_client,
         Dataframe with Option Chains. Blank if market is closed.
     """
     # TODO: Filter out stocks by underlying price
+
     st.write(f"Tables between {min_dte:%b-%d-%Y} & {max_dte:%b-%d-%Y} for:")
-    options_df = None
-    options = {}
+
+    option_collection = []
     for symbol in symbol_list:
-        try:
-            options[symbol] = get_one_table(
+        option_collection.append(
+            get_one_table(
                 tda_client=tda_client,
                 symbol=symbol,
                 max_dte=max_dte,
                 min_dte=min_dte
             )
-        except Exception as e:
-            st.error(f"   - {symbol} Failed. Error: {e}")
-    if len(options) != 0:
-        options_df = pd.concat(options)
-        options_df.index.set_names(
-            ['stock', 'option_type', 'symbol'],
-            inplace=True
         )
-    return options_df
+
+    final_options = pd.concat(option_collection)
+    final_options.rename(columns={'putCall': 'option_type'}, inplace=True)
+    final_options['option_type'] = final_options['option_type'].str.lower()
+    final_options.set_index(['stock', 'option_type', 'symbol'], inplace=True)
+
+    return final_options
+    # TODO: Delete these lines once other code is verified.
+    #
+    # options_df = None
+    # options = {}
+    # for symbol in symbol_list:
+    #     try:
+    #         options[symbol] = get_one_table(
+    #             tda_client=tda_client,
+    #             symbol=symbol,
+    #             max_dte=max_dte,
+    #             min_dte=min_dte
+    #         )
+    #     except Exception as e:
+    #         st.error(f"   - {symbol} Failed. Error: {e}")
+    # if len(options) != 0:
+    #     options_df = pd.concat(options)
+    #     options_df.index.set_names(
+    #         ['stock', 'option_type', 'symbol'],
+    #         inplace=True
+    #     )
+    # return options_df
 
 
 def get_one_table(tda_client,
@@ -60,7 +83,7 @@ def get_one_table(tda_client,
     Returns:
         options_table (data frame):  puts and calls for all dates within DTE.
     """
-    options = tda_client.get_option_chain(
+    r = tda_client.get_option_chain(
         symbol=symbol,
         contract_type=None,
         strike_count=None,
@@ -79,10 +102,43 @@ def get_one_table(tda_client,
         exp_month=None,
         option_type=None)
 
-    options = options.json()
+    assert r.status_code == httpx.codes.OK, r.raise_for_status()
+
+    options = r.json()
 
     st.write(f"   {symbol}, ${options['underlyingPrice']:.2f}")
+    return unpack_option_tables(options)
 
+
+def unpack_option_tables(options):
+    """
+    Unpacks Option Chains from TDA.
+
+    :param options: Option chain in JSON format.
+    :return: Option chains; puts and calls, merged into one DataFrame/
+    """
+    opt = options.copy()
+    ret = []
+    for _date in opt["callExpDateMap"]:
+        for strike in opt["callExpDateMap"][_date]:
+            ret.extend(opt["callExpDateMap"][_date][strike])
+    for _date in opt["putExpDateMap"]:
+        for strike in opt["putExpDateMap"][_date]:
+            ret.extend(opt["putExpDateMap"][_date][strike])
+    df = pd.DataFrame(ret)
+    time_cols = [
+        "tradeTimeInLong",
+        "quoteTimeInLong",
+        "expirationDate",
+        "lastTradingDay"
+    ]
+    for col in time_cols:
+        df[col] = pd.to_datetime(df[col], unit="ms")
+    df['stock'] = opt['symbol']
+    return df
+
+
+def unpack_table_old(options, symbol):
     if options['status'] == "SUCCESS":
         try:
             calls = pd.json_normalize(

@@ -336,35 +336,9 @@ class Modeling:
         _value = _csv['DGS10'].values[-1]
         self.rf = float(_value) / 100
 
-    def massage_options_table(self):
-        # Optimize Options Table before heavy processing.
-        opt = self.options
-        opt['volatility'] = opt['volatility'] / 100
-        # Prep DataFrame for Performance:
-        # 1) Filter out columns,
-        # 2) Filter out rows,
-        opt = opt[
-            (opt['openInterest'] > 0)
-            & (opt['totalVolume'] > 0)
-            & (opt['bid'] > 0)
-            & (opt['ask'] > 0)
-            & (opt['volatility'].astype('float').round(8).values > 0)
-            ]
-        # TODO: Remove rows too far away from the mean.
-
-        # 3) Lower-range numerical and categoricals dtypes,
-        opt = optimize_pd(opt, deal_with_na='fill', verbose=False)
-        # 4) Sparse Columns.
-        opt.dropna(axis='index', how='any', inplace=True)
-        # 5) Re-index.
-        # opt.reset_index(drop=True, inplace=True)
-
-        self.options = opt
-
     def prepare_tables(self, con):
         self.get_last_price(con)
         self.get_risk_free_rate()
-        self.massage_options_table()
 
     def black_scholes(self):
         df = self.options.copy()

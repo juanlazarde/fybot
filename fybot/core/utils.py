@@ -88,6 +88,33 @@ def timeit(method):
     return timed
 
 
+def lineprofile(func):
+    """
+    Line Profile decorator shows time usage per line.
+
+    Use:
+    ::
+        from utils import lineprofile
+
+        @lineprofile
+        def function_to_profile(numbers):
+            do_something = numbers
+
+    """
+    from functools import wraps
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        from line_profiler import LineProfiler
+        prof = LineProfiler()
+        try:
+            return prof(func)(*args, **kwargs)
+        finally:
+            prof.print_stats()
+
+    return wrapper
+
+
 def get_pd_memory_usage(df: pd.DataFrame or pd.Series) -> str:
     """
     Return the memory usage of a pandas object.
@@ -140,9 +167,10 @@ def optimize_pd(
     if deal_with_na == 'fill':
         df.fillna(0, inplace=True)  # fill all missing values with 0.
     elif deal_with_na == 'drop':
-        df.dropna(axis=0, how='any')
+        df.dropna(axis=0, how='any', inplace=True)
     else:
         pass
+
     if verbose:
         print('Original Memory Usage: ', get_pd_memory_usage(df))
 
@@ -173,6 +201,10 @@ def optimize_pd(
     if obj_ser.empty is False:
         obj_i = obj_ser.index
         for c in obj_i:
+            # Skip conversion fi there're any numbres in the series.
+            if df[c].apply(lambda x: isinstance(x, (float, int))).any():
+                continue
+            # If more than 50% of the series are unique then categorize.
             if len(df[c].unique()) / len(df[c]) < 0.5:
                 df.loc[:, c] = df[c].astype('category')
         if verbose:
@@ -180,33 +212,6 @@ def optimize_pd(
 
     # Returns DataFrame or Series, depending on what came in.
     return df.squeeze() if i_was_series else df
-
-
-def lineprofile(func):
-    """
-    Line Profile decorator shows time usage per line.
-
-    Use:
-    ::
-        from utils import lineprofile
-
-        @lineprofile
-        def function_to_profile(numbers):
-            do_something = numbers
-
-    """
-    from functools import wraps
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        from line_profiler import LineProfiler
-        prof = LineProfiler()
-        try:
-            return prof(func)(*args, **kwargs)
-        finally:
-            prof.print_stats()
-
-    return wrapper
 
 
 class Watchlist:

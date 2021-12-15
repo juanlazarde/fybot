@@ -10,7 +10,7 @@ import streamlit as st
 from core.fy_tda import TDA
 import core.option_sniper.strategy as sniper_strategy
 from core.option_sniper.download import get_all_tables
-from core.utils import fix_path, Watchlist
+from core.utils import fix_path, Watchlist, optimize_pd
 from core.option_sniper.modeling import Modeling
 
 
@@ -28,6 +28,7 @@ class GetOptions:
 
     def __init__(self, cfg, tda, wtc):
         self.get_options_from_tda(cfg, tda, wtc)
+        self.clean_options()
         pickle_name = fix_path(cfg['DEBUG']['data']) + 'options_df.pkl'
         is_local, sim_watchlist = self.load_options(pickle_name)
         self.save_options(is_local, pickle_name)
@@ -48,16 +49,52 @@ class GetOptions:
 
     def get_options_from_tda(self, cfg, tda, wtc):
         """Downloads, saves/opens Pickle file &  assigns to Options table."""
-        min_strike_date = datetime.now() + timedelta(cfg['FILTERS']['min_dte'])
-        max_strike_date = datetime.now() + timedelta(cfg['FILTERS']['max_dte'])
         force_download = cfg['DEBUG']['force_download']
         if self.market_is_open() or force_download:
+            from_date = datetime.now() + timedelta(cfg['FILTERS']['min_dte'])
+            to_date = datetime.now() + timedelta(cfg['FILTERS']['max_dte'])
             self.options = get_all_tables(
                 tda_client=tda.client,
                 symbol_list=wtc,
-                min_dte=min_strike_date,
-                max_dte=max_strike_date,
+                min_dte=from_date,
+                max_dte=to_date,
             )
+
+    def clean_options(self):
+        """
+        Cleanup option chain and optimize DataFrame.
+
+            1) Filter out columns,
+            2) Filter out rows,
+            3) Lower-range numerical and categoricals dtypes,
+            4) Sparse Columns.
+            5) Re-index.
+
+        :return: Optimized dataframe to self.options
+        """
+        if self.options is None or self.options.empty:
+            return
+
+        opt = self.options.copy()
+        # Measure it:
+        # print(f"{sum(opt.memory_usage(deep=True))/1024:,.2f}Kb")
+        opt.replace(["", " ", None], float('NaN'), inplace=True)
+        opt.dropna(axis='columns', how='all', inplace=True)
+        opt = optimize_pd(opt, deal_with_na='drop', verbose=False)
+        # a = opt['volatility'][~opt['volatility'].apply(lambda x: isinstance(x, float))]
+        # if opt['volatility'][opt['volatility'].apply(lambda x: isinstance(x, float))].all():
+        #     print(a)
+        opt['volatility'] = opt['volatility'] / 100.
+        opt = opt[
+            (opt['openInterest'] > 0) &
+            (opt['totalVolume'] > 0) &
+            (opt['bid'] > 0) &
+            (opt['ask'] > 0) &
+            (opt['volatility'].astype('float').round(8).values > 0)
+        ]
+        # opt.reset_index(drop=True, inplace=True)
+        # print(f"{sum(opt.memory_usage(deep=True))/1024:,.2f}Kb")
+        self.options = opt
 
     def load_options(self, name):
         if ((self.options is None or len(self.options.index) < 1) and
@@ -162,37 +199,38 @@ class OptionAnalysis:
 
 
 class Progress:
-    """
-    Progress bar and Status update.
-    """
-    def __init__(self, n_functions):
-        self.n = n_functions
-        self.my_bar = st.progress(0)
+    """Progress bar and Status update."""
+    def __init__(self, number_of_functions: int):
+        self.n = number_of_functions
+        self.bar = st.progress(0)
         self.progress = 1
-        self.msg = ""
-        self.container = st.empty()
+        self.message = ""
+        self.message_container = st.empty()
 
-    def go(self, msg, func, *args, **kwargs):
-        self.msg += msg
-        self.container.info(self.msg)
+    def go(self, msg, function, *args, **kwargs):
+        self.message += msg
+        self.message_container.info(self.message)
         s = t()
-        result = func(*args, **kwargs)
-        self.msg += f" [{t() - s:.3f}sec]. "
-        self.container.info(self.msg)
-        self.my_bar.progress(self.progress / self.n)
+        result = function(*args, **kwargs)
+        self.message += f" [{t() - s:.2f}s]. "
+        self.message_container.info(self.message)
+        self.bar.progress(self.progress / self.n)
         self.progress += 1
+        if self.progress > self.n:
+            self.bar.empty()
         return result
 
 
 # import core.utils as ut
 # @ut.lineprofile
 def snipe(cfg: dict):
-    p = Progress(6)
-    con = p.go("Establishing connection with TDA API", TDA)
+    p = Progress(number_of_functions=6)
+    con = p.go("Connecting with TDA", TDA)
     wtc = p.go("Pulling watchlist", Watchlist.selected, cfg['WATCHLIST']['watchlist_current'])
-    dwn = p.go("Getting option tables", GetOptions, cfg, con, wtc)
+    dwn = p.go("Getting option chains", GetOptions, cfg, con, wtc)
     ext = p.go("Adding studies to option table", Modeling, con, dwn)
-    p.go("Probability of Profit (Monte Carlo simulations)", ext.probability_of_profits, montecarlo_iterations=100)
+    # p.go("Black Scholes", ext.black_scholes)
+    p.go("Probability of Profit", ext.probability_of_profits, montecarlo_iterations=100)
     result = p.go("Analyzing strategies", OptionAnalysis, cfg, ext.options).result
 
     # con = TDA()

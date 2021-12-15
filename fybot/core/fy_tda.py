@@ -96,13 +96,15 @@ class TDA:
             driver (object): API authorization.
         """
         # Import selenium here because it's slow to import
-        # from selenium import webdriver
-        import selenium.webdriver as webdriver
+        from selenium import webdriver
         import atexit
         import webbrowser
+        from webdriver_manager.chrome import ChromeDriverManager
 
         try:
-            driver = webdriver.Chrome()
+            # driver = webdriver.Chrome()
+            # TODO: Line below is beta. Need to check up on this.
+            driver = webdriver.Chrome(ChromeDriverManager().install())
             atexit.register(lambda: driver.quit())
             log.info("ChromeDriver created successfully")
             return driver

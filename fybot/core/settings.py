@@ -79,7 +79,7 @@ OPTION_SNIPER = {
     'DEBUG': {
         'save_load_pickle': False,
         'export': False,
-        'force_download': False,
+        'force_download': True,
         'data': DATASET_DIR,
     },
     'WATCHLIST': {

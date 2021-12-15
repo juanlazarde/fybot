@@ -1,4 +1,8 @@
-"""Install packages
+"""
+Install packages
+
+Review:
+    https://python-packaging-tutorial.readthedocs.io/en/latest/setup_py.html
 
 Command::
 

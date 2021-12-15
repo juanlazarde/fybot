@@ -27,7 +27,7 @@ class Encryption:
          """
 
         # name of file with key
-        if len(password.strip()) == 0:
+        if len(password.strip()) != 0:
             key = password.strip()
         else:
             key = self.create_save_key_file(ss.SECRET_KEY_FILE)

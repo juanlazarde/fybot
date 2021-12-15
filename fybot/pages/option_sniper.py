@@ -293,7 +293,7 @@ def app():
             label="Probability of Profit minimum",
             min_value=0.,
             max_value=100.,
-            step=.01,
+            step=1.,
             value=float(params['FILTERS']['min_pop']),
             help="Minimum probability to make at least $0.01"
         )
@@ -303,7 +303,7 @@ def app():
             label="Probability of 50% Profit minimum",
             min_value=0.,
             max_value=100.,
-            step=.01,
+            step=1.,
             value=float(params['FILTERS']['min_p50']),
             help="Minimum probability to make at least 50% of total profit"
         )
