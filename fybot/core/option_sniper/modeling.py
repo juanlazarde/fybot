@@ -1,10 +1,8 @@
 from typing import Dict, Optional, Any
 import numpy as np
-from scipy.stats import norm
+import scipy
 import pandas as pd
 import threading
-
-from core.utils import optimize_pd
 
 
 def black_scholes(S, K, T, rf: float, iv, option_type) -> pd.DataFrame:
@@ -50,8 +48,8 @@ def black_scholes(S, K, T, rf: float, iv, option_type) -> pd.DataFrame:
 
     f = np.where(np.isin(option_type, ['calls', 'call', 'c']), 1, -1)
 
-    N_d1 = norm.cdf(f * d1)
-    N_d2 = norm.cdf(f * d2)
+    N_d1 = scipy.stats.norm.cdf(f * d1)
+    N_d2 = scipy.stats.norm.cdf(f * d2)
 
     A = S * N_d1
     B = K * N_d2 * np.exp(-rf * t)

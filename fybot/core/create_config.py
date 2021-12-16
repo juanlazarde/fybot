@@ -1,4 +1,4 @@
-__all__ = ['run']
+__all__ = ['create_config']
 
 import os
 from getpass import getpass
@@ -6,7 +6,7 @@ from core.encryption import Encryption
 from core.utils import fix_path
 
 
-def run(filename: str = '../config/config-test.py'):
+def create_config(filename: str = '../config/config-test.py'):
     print("Configuration Wizard\n"
           "====================\n")
     print("Profile info:")
@@ -70,4 +70,4 @@ def run(filename: str = '../config/config-test.py'):
 
 
 if __name__ == '__main':
-    run()
+    create_config()

@@ -6,6 +6,7 @@ import logging
 from logging.config import fileConfig
 
 import core.settings as ss
+from core.create_config import create_config
 
 
 def _create_table():
@@ -64,8 +65,7 @@ def _setup():
                        "--setup", "-s", "--s", "/s", "/setup", "-config",
                        "-configurar"]:
 
-        import core.create_config
-        core.create_config.run(r'config.py')
+        create_config(r'config.py')
         sys.exit(0)
 
 

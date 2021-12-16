@@ -1,5 +1,31 @@
+# Virtual environment setup.
+# pip install virtualenv
+# python3 -m venv name_of_env
+# source name_of_env/bin/activate
+# pip install -r requirements.txt
+
+# To get the currently installed packages.
+# Not all are necessarily 'requirements' to run package.
+# pip3 freeze > requirements.txt
+
+# Using pipenv.
+# Install
+# pip install pipenv
+#
+# # Install Your Packages for the project
+# pipenv install mypackage
+#
+# # Activate Virtual Env
+# pipenv shell
+#
+# # Run a script in the virtual env
+# pipenv run python myscript.py
+#
+# Get the requirements.txt
+# pipenv -r lock >> requirements.txt
+
+
 aiohttp
-alpaca-trade-api
 asyncio
 asyncpg
 cryptography
@@ -8,22 +34,30 @@ lxml
 matplotlib
 numpy
 pandas
-plotly
 psaw
 psycopg2
-python-dateutil
 pytz
 requests
 scipy
 selenium
+
+
+# User interface.
 streamlit
-ta
+
+# Data sources, API managers.
+alpaca-trade-api
 tda-api
 yahooquery
 yfinance
 
-ipython
-state
-setuptools
+# Finance tools.
+ta
+ta-lib  # https://pypi.org/project/TA-Lib/
 
-numba
+# Testing tools, not useful in production.
+line-profiler
+memory-profiler
+
+# Testing
+webdriver-manager

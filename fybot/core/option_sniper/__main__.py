@@ -227,7 +227,7 @@ def snipe(cfg: dict):
     dwn = p.go("Getting option chains", GetOptions, cfg, con, wtc)
     ext = p.go("Adding studies to option table", Modeling, con, dwn)
     # p.go("Black Scholes", ext.black_scholes)
-    p.go("Probability of Profit", ext.probability_of_profits, montecarlo_iterations=100)
+    p.go("Probability of Profit", ext.probability_of_profits, montecarlo_iterations=5000)
     result = p.go("Analyzing strategies", OptionAnalysis, cfg, ext.options).result
 
     # con = TDA()

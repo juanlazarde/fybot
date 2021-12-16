@@ -1,10 +1,10 @@
-import os
-import sys
 import asyncio
 import json
 import logging
-import streamlit as st
+import os
+import sys
 
+import streamlit as st
 from tda.auth import easy_client as tda_connection
 from tda.streaming import StreamClient
 
@@ -96,7 +96,8 @@ class TDA:
             driver (object): API authorization.
         """
         # Import selenium here because it's slow to import
-        from selenium import webdriver
+        # from selenium import webdriver
+        import selenium
         import atexit
         import webbrowser
         from webdriver_manager.chrome import ChromeDriverManager
@@ -104,7 +105,7 @@ class TDA:
         try:
             # driver = webdriver.Chrome()
             # TODO: Line below is beta. Need to check up on this.
-            driver = webdriver.Chrome(ChromeDriverManager().install())
+            driver = selenium.webdriver.Chrome(ChromeDriverManager().install())
             atexit.register(lambda: driver.quit())
             log.info("ChromeDriver created successfully")
             return driver

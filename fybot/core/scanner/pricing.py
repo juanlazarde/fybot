@@ -141,14 +141,14 @@ class Source(GetPrice):
         """
         # Create connection, return empty df if there is no connection
         try:
-            con = TDA(asyncio_bool=True)
+            con = TDA(is_asyncio=True)
         except Exception as e:
             log.info(f"TDA Connection failed. {e}")
             return pd.DataFrame()
 
         # download stocks data in chunks and concatenate to large table
-        end_date = datetime.datetime.now()
-        start_date = end_date - datetime.timedelta(days=ss.DAYS)
+        # end_date = datetime.datetime.now()
+        # start_date = end_date - datetime.timedelta(days=ss.DAYS)
 
         df = pd.DataFrame()
 

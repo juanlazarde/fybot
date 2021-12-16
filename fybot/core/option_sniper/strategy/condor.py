@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from IPython.display import display
 from scipy.spatial.distance import cdist
 
 from core.option_sniper.utility import divider
@@ -144,7 +143,6 @@ def condor(df, filters):
     divider()
     print("CONDOR HACKER\n" +
           "=" * 13)
-    max_dte = int(filters['max_dte'])
     max_delta = float(filters['max_delta'])
     min_open_int_pctl = int(filters['min_open_int_pctl'])
     min_volume_pctl = int(filters['min_volume_pctl'])
@@ -216,14 +214,14 @@ def condor(df, filters):
     condors_df = condors_df.sort_values('premium_risk_ratio', ascending=False)
 
     print('Top Paying Condors with Delta <', max_delta * 100)
-    display(condors_df.head(top_n))
+    print(condors_df.head(top_n))
 
     days_to_expiration_list = sorted(condors_df.dte.unique())
     print('Top Paying Condors by Days to Expiration with Delta <',
           max_delta * 100)
 
     for days in days_to_expiration_list:
-        display(condors_df[condors_df['dte'] == days].head(top_n))
+        print(condors_df[condors_df['dte'] == days].head(top_n))
 
     return condors_df
 

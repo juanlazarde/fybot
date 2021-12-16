@@ -79,8 +79,8 @@ class Scan:
 class File(Scan):
     def load(self):
         self.signals = pd.read_pickle(ss.SIGNALS_FILE)
-        log.debug(f"Signal tables loaded from file: {ss.SIGNALS_FILE}")
-        return self.symbols, self.signals
+        # log.debug(f"Signal tables loaded from file: {ss.SIGNALS_FILE}")
+        return self.signals
 
     @staticmethod
     def get_timestap():

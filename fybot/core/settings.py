@@ -58,14 +58,15 @@ ALPACA_ENDPOINT = config.ALPACA_ENDPOINT
 
 # default values
 # scanner.py filters
-DEFAULT_FILTERS = {'consolidating': {'go': False, 'pct': 6.0},
-                   'breakout': {'go': False, 'pct': 2.5},
-                   'ttm_squeeze': {'go': False},
-                   'in_the_squeeze': {'go': True},
-                   'candlestick': {'go': True},
-                   'sma_filter': {'go': False, 'fast': 25, 'slow': 100},
-                   'ema_stacked': {'go': True},
-                   'investor_reco': {'go': False}
+DEFAULT_FILTERS = {
+    'consolidating': {'go': False, 'pct': 6.0},
+    'breakout': {'go': False, 'pct': 2.5},
+    'ttm_squeeze': {'go': False},
+    'in_the_squeeze': {'go': True},
+    'candlestick': {'go': True},
+    'sma_filter': {'go': False, 'fast': 25, 'slow': 100},
+    'ema_stacked': {'go': True},
+    'investor_reco': {'go': False}
 }
 
 # news.py settings
