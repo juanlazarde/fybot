@@ -15,6 +15,7 @@ Financial dashboard with technical scanner, news, and options analysis.
 
 ## Run
 * Run `python fybot`. Normal operation will open a browser.
+* If 'run fybot' does not work, a bat script can be used. In the meantime, use run `streamlit run fybot/app.py`
 * **Win**: edit path and create shortcut to `fybot.bat` 
 
 ### Fybot's Notebooks
