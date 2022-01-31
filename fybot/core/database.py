@@ -84,8 +84,7 @@ class Database:
 
     def create_table(self):
         """create table in database"""
-
-        sql = self.parse_sql("config/create_tables.sql")
+        sql = self.parse_sql("fybot/config/create_tables.sql")
         for i in sql:
             self.execute(i)
 
