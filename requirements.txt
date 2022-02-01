@@ -61,3 +61,5 @@ memory-profiler
 
 # Testing
 webdriver-manager
+streamlit-aggrid
+# sqlalchemy

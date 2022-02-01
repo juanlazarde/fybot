@@ -25,7 +25,7 @@ class GetPrice:
         then from data, finally from file.
 
         :param symbols: list of symbols
-        :param forced: True bypassess 24 hour download requirement
+        :param forced: True bypasses 24 hour download requirement
         :param source: Source from where the data is downloaded
         """
 
@@ -89,9 +89,10 @@ class GetPrice:
     def download(symbols: list, source: str):
         source = 'con' if (source == '' or source is None) else source
         if source == 'con':
-            df = asyncio.run(Source().tda(symbols=symbols))
+            # df = asyncio.run(Source().tda(symbols=symbols))
+            df = asyncio.run(Source.tda(symbols=symbols))
         elif source == 'yahoo':
-            df = Source().yahoo(symbols=symbols)
+            df = Source.yahoo(symbols=symbols)
         else:
             log.warning(f"Source {source} doesn't exist'")
             sys.exit(1)
@@ -119,7 +120,7 @@ class GetPrice:
                 volume=excluded.volume;
             """
 
-        # using asynciopg as the Database connection manager for Async
+        # using asyncio-pg as the Database connection manager for Async
         creds = {'host': ss.DB_HOST, 'database': ss.DB_NAME,
                  'user': ss.DB_USER, 'password': ss.DB_PASSWORD}
         async with asyncpg.create_pool(**creds) as pool:
@@ -135,7 +136,7 @@ class Source(GetPrice):
     async def tda(symbols: list):
         """Download price data from TD Ameritrade.
 
-        List of symbols is chunkable by changing the chunk_size.
+        List of symbols is chunk-able by changing the chunk_size.
 
         :param symbols: list of symbols to download fundamentals
         """
@@ -171,11 +172,13 @@ class Source(GetPrice):
                 # end_datetime=end_date,
                 need_extended_hours_data=None
             )
-            assert resp.status_code == httpx.codes.OK
-            df_chunk = pd.DataFrame(resp.json())
+            assert resp.status_code == httpx.codes.OK, \
+                f"TDA data request: {str(resp)}"
 
-            df_chunk = pd.json_normalize(df_chunk['candles'])
-            df_chunk['datetime'] = pd.to_datetime(df_chunk['datetime'])
+            df_chunk = pd.DataFrame.from_dict(resp.json()['candles'])
+            # df_chunk = pd.DataFrame(resp.json())
+            # df_chunk = pd.json_normalize(df_chunk['candles'])
+            df_chunk['datetime'] = pd.to_datetime(df_chunk['datetime'], unit='ms')
             df_chunk = df_chunk.set_index(['datetime'])
             df_chunk.columns = pd.MultiIndex.from_product(
                 [df_chunk.columns, [symbol_chunk]]).swaplevel(0, 1)
@@ -186,19 +189,21 @@ class Source(GetPrice):
                 sleep(2.0)
 
         # cleanup any NaN values in the dataframe
+        # TODO: NaN replacement not working
+        df = df.replace(["", " ", None, "NaN", "nan"], float('NaN'))
         df = df.dropna(how='all')
         df = df.dropna(how='all', axis=1)
         df = df.stack(level=0)
         df = df.reset_index()
         df = df.rename(columns={'level_1': 'symbol'})
 
-        log.info("Price history downloaded from TD Ameritrde")
+        log.info("Price history downloaded from TD Ameritrade")
         return df
 
     def yahoo(self, symbols: list):
         """Download price data from YFinance.
 
-        List of symbols is chunkable by changing the chunk_size.
+        List of symbols is chunk-able by changing the chunk_size.
 
         :param symbols: list of symbols to download fundamentals
         """
@@ -216,7 +221,7 @@ class Source(GetPrice):
         for i in range(0, len(symbols), chunk_size):
             symbol_chunk = symbols[i:i + chunk_size]
 
-            # TODO: Other sources of downlaods, like TDA, Alpaca
+            # TODO: Other sources of downloads, like TDA, Alpaca
             # download chunk of fundamentals from YFinance
             df_chunk = self.yfinance_price_history(
                 symbol_chunk,
@@ -260,7 +265,7 @@ class Source(GetPrice):
                            period='max',  # change instead of start/end
                            group_by='ticker',  # or 'column'
                            progress=False,  # show progress bar
-                           rounding=False,  # round 2 descimals
+                           rounding=False,  # round 2 decimals
                            actions=False,  # include dividend/earnings
                            threads=True,  # multi threads bool or int
                            auto_adjust=False,  # adjust OHLC with adj_close
