@@ -1,23 +1,12 @@
 # -*- coding: utf-8 -*-
-"""
-Utilities for TDA
+"""Utilities for TDA"""
 
-Created on Mon May  2 19:26:17 2020
-
-@author: ramirezae
-
-ver 1.0 Original version
-ver 1.1 Included undeclared modules
-        Included Path from configuration files
-        Replaced two different NASDAQ files to get the Symbols with one file
-        Added NASDAQTRADEDLIST of Symbols download from FTP
-        Downloads the Symbols if they don't exist, or they're a week old
-"""
 import os
 import platform
 import sys
 import time
 from ftplib import FTP
+from datetime import datetime, timedelta, date, time, timezone
 
 import pandas as pd
 
@@ -26,7 +15,7 @@ def creation_date(path_to_file):
     """Gets the file creation date.
 
     Falls back to when it was last modified if that isn't possible.
-    See http://stackoverflow.com/a/39501288/1709587 for explanation.
+    See https://stackoverflow.com/a/39501288/1709587 for explanation.
 
     Args:
         path_to_file (str): Path to the file.
@@ -46,14 +35,15 @@ def creation_date(path_to_file):
             return stat.st_mtime
 
 
+# noinspection SpellCheckingInspection
 def download_symbols(reference_path="data/"):
     """Downloads NASDAQ-traded stock/ETF Symbols, from NASDAQ FTP.
 
     Info is saved into 'nasdaqtraded.txt' file. Info is available via FTP,
-    updated nightly. Logs into ftp.nasdaqtrader.com, anonymously, and browses
+    updated nightly. Logs into ftp server, anonymously, and browses
     SymbolDirectory.
     ftp://ftp.nasdaqtrader.com/symboldirectory
-    http://www.nasdaqtrader.com/trader.aspx?id=symboldirdefs
+    https://www.nasdaqtrader.com/trader.aspx?id=symboldirdefs
 
     Args:
         reference_path (str): Local path to save the symbols file. By
@@ -108,7 +98,7 @@ def import_symbols(reference_path="data/"):
     filtered to exclude Delinquency, Tests, non-traditional, 5+ digit
     tickers, and more.
     This link has the references to the files in NASDAQ Trader:
-    http://www.nasdaqtrader.com/trader.aspx?id=symboldirdefs
+    https://www.nasdaqtrader.com/trader.aspx?id=symboldirdefs
 
     Args:
         reference_path (str): Path of the textfile with the symbol information.
@@ -132,7 +122,7 @@ def import_symbols(reference_path="data/"):
         print("File doesn't exist or it's over 7 days old.\n" +
               "Will download the latest version from Nasdaq.")
         download_symbols(reference_path)
-        print("Latest Symbols database downloaded succesfully!")
+        print("Latest Symbols database downloaded successfully!")
 
     df = pd.read_csv(symbol_file, sep='|')
 
@@ -237,3 +227,15 @@ def run_once(f):
             return f(*args, **kwargs)
     wrapper.run = False
     return wrapper
+
+
+def market_is_open():
+    """Return True or False whether the market is open or not."""
+    current_weekday = date.today().weekday()
+    current_time = (datetime
+                    .now()
+                    .astimezone(timezone(timedelta(hours=-5)))
+                    .time())
+
+    return (current_weekday < 5 and
+            time(16, 0) >= current_time >= time(9, 30))

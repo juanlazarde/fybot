@@ -8,6 +8,7 @@ import pandas as pd
 from tda.client.synchronous import Client
 
 from core.utils import optimize_pd
+from core.option_sniper.utility import market_is_open
 
 
 def get_quotes(tda, symbol_list: list):
@@ -151,9 +152,12 @@ def cleanup_option_table(options: pd.DataFrame):
         (opt['openInterest'] > 0) &
         (opt['totalVolume'] > 0) &
         (opt['bid'] > 0) &
-        (opt['ask'] > 0) &
-        (opt['volatility'].astype('float').round(8).values > 0)
+        (opt['ask'] > 0)
     ]
+
+    if market_is_open():
+        opt = opt[(opt['volatility'].astype('float').round(8).values > 0)]
+
     opt.rename(columns={'putCall': 'option_type'}, inplace=True)
     opt['option_type'] = opt['option_type'].str.lower()
 

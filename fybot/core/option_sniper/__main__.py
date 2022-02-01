@@ -1,7 +1,7 @@
 """This module implements Option analysis and recommendations"""
 
 import pickle
-from datetime import datetime, timedelta, date, time, timezone
+from datetime import datetime, timedelta
 from sys import exit
 from time import time as t
 
@@ -12,6 +12,7 @@ from core.utils import fix_path, Watchlist
 import core.option_sniper.download as download
 from core.option_sniper.modeling import Modeling
 from core.option_sniper.strategies import OptionStrategy
+from core.option_sniper.utility import market_is_open
 
 
 class GetOptions:
@@ -46,27 +47,14 @@ class GetOptions:
         self.wtc = [i['stock'] for i in last_price_list
                     if price_min <= i['lastPrice'] <= price_max]
 
-    @staticmethod
-    def market_is_open():
-        """Return True or False whether the market is open or not."""
-        current_weekday = date.today().weekday()
-        current_time = (datetime
-                        .now()
-                        .astimezone(timezone(timedelta(hours=-5)))
-                        .time())
-
-        return (current_weekday < 5 and
-                time(16, 0) >= current_time >= time(9, 30))
-
     def get_options_from_tda(self):
         """Downloads, saves/opens Pickle file &  assigns to Options table."""
         force_download = self._param['DEBUG']['force_download']
-        market_is_open = self.market_is_open()
 
-        if force_download and not market_is_open:
+        if force_download and not market_is_open():
             st.warning("Market is closed. Download is enforced by settings.")
 
-        if force_download or market_is_open:
+        if force_download or market_is_open():
             pass
         else:
             return
@@ -84,7 +72,7 @@ class GetOptions:
 
     def load_options(self, name):
         if ((self.options is None or len(self.options.index) < 1) and
-                not self.market_is_open()):
+                not market_is_open()):
             try:
                 st.write("\nMarket is closed. Attempting to load local file.")
                 with open(name, 'rb') as file:
@@ -92,8 +80,11 @@ class GetOptions:
                 st.write("***** YOU WILL NOW WORK IN SIMULATION MODE *****")
                 if pkl is not None and len(pkl.index) > 1:
                     self.options = pkl
-                    sim_watchlist = (Watchlist
-                                     .sanitize(",".join(pkl.index.levels[0])))
+                    # TODO: Check this and delete
+                    # sim_watchlist = (Watchlist
+                    #                  .sanitize(",".join(pkl.index.levels[0])))
+                    sim_watchlist = Watchlist.sanitize(
+                        ",".join(pkl['stock'].unique()))
                     st.write("Available symbols: " + ", ".join(sim_watchlist))
                     return True, sim_watchlist
                 else:
@@ -107,7 +98,7 @@ class GetOptions:
     def save_options(self, is_local, name):
         if not is_local:
             if ((self.options is not None and len(self.options.index) > 0) and
-                    self.market_is_open()):
+                    market_is_open()):
                 try:
                     with open(name, 'wb') as file:
                         pickle.dump(self.options,
