@@ -4,6 +4,8 @@ import scipy
 import pandas as pd
 import threading
 
+import core.option_sniper.download as download
+
 
 def black_scholes(S, K, T, rf: float, iv, option_type) -> pd.DataFrame:
     """
@@ -24,13 +26,13 @@ def black_scholes(S, K, T, rf: float, iv, option_type) -> pd.DataFrame:
     Rho: Measures the impact of changes in Interest rates
 
     :param S: Underlying Asset or Stock Price ($).
-    :param K: Strike or Excercise Price ($).
+    :param K: Strike or Exercise Price ($).
     :param T: Expiry time of the option (days).
     :param rf: Risk-free rate (decimal number range 0-1).
     :param iv: Volatility (decimal).
     :param option_type: Calls or Puts option type.
     :return: Dataframe 'option_value', 'intrinsic_value', and 'time_value'.
-     Greeks has delta, gamma, theta, rho.
+     Greek has delta, gamma, theta, rho.
     """
     # Check inputs.
     is_type = np.isin(option_type, ['calls', 'puts', 'call', 'put', 'c', 'p'])
@@ -48,25 +50,25 @@ def black_scholes(S, K, T, rf: float, iv, option_type) -> pd.DataFrame:
 
     f = np.where(np.isin(option_type, ['calls', 'call', 'c']), 1, -1)
 
-    N_d1 = scipy.stats.norm.cdf(f * d1)
-    N_d2 = scipy.stats.norm.cdf(f * d2)
+    n_d1 = scipy.stats.norm.cdf(f * d1)
+    n_d2 = scipy.stats.norm.cdf(f * d2)
 
-    A = S * N_d1
-    B = K * N_d2 * np.exp(-rf * t)
+    a = S * n_d1
+    b = K * n_d2 * np.exp(-rf * t)
 
     # Option pricing.
-    val = f * (A - B)
+    val = f * (a - b)
     val_int = np.maximum(0.0, f * (S - K))
     val_time = val - val_int
 
     # Greeks.
-    delta = f * N_d1
+    delta = f * n_d1
     gamma = np.exp((-d1 ** 2) / 2) / (S * iv * np.sqrt(2 * np.pi * t))
     theta = (-S * iv * np.exp(-d1 ** 2 / 2) / np.sqrt(8 * np.pi * t)
-             - f * (N_d2 * rf * K * np.exp(-rf * t))) / 365
+             - f * (n_d2 * rf * K * np.exp(-rf * t))) / 365
     vega = ((S * np.sqrt(t) * np.exp((-d1 ** 2) / 2))
             / (np.sqrt(2 * np.pi) * 100))
-    rho = f * t * K * N_d2 * np.exp(-rf * t) / 100
+    rho = f * t * K * n_d2 * np.exp(-rf * t) / 100
 
     # Returns Dataframe.
     return pd.DataFrame({
@@ -185,45 +187,23 @@ def monte_carlo(
     }
 
 
-def mc_numpy_vector(*args):
-    """
-    Monte Carlo simulations vectorized so that arrays work in calculations
-
-    DEPRECATED: It's faster to multithread this operation.
-    """
-    curr_price, opt, ten_yr, rng, montecarlo_iterations = args
-    vector_monte_carlo = np.vectorize(monte_carlo)
-    _pop = vector_monte_carlo(
-        key=opt['contractSymbol'],
-        S=curr_price,
-        K=opt['strikePrice'].to_numpy(),
-        T=opt['daysToExpiration'].to_numpy(),
-        rf=ten_yr,
-        iv=opt['volatility'].to_numpy(),
-        option_type=opt['option_type'].to_numpy(),
-        rng=rng,
-        n=montecarlo_iterations
-    )
-    return pd.DataFrame.from_records(_pop)  # pd.json_normalize(_pop.T)
-
-
 def mc_multi_threading(*args):
     """
     Monte Carlo simulations vectorized so that arrays work in calculations.
-    Multithreaded, means one CPU works multiple I/O.
+    Multithreading, means one CPU works multiple I/O.
 
     :param args: Passing all parameters from call.
     :return: Dataframe with results. Including a key to join later.
     """
     def threader(opt, ten_yr, rng, montecarlo_iterations):
         _pop = vector_monte_carlo(
-            key=opt.index.get_level_values('symbol').to_numpy(),
+            key=opt.index.to_numpy(),
             S=opt['lastPrice'].to_numpy(),
             K=opt['strikePrice'].to_numpy(),
             T=opt['daysToExpiration'].to_numpy(),
             rf=ten_yr,
             iv=opt['volatility'].to_numpy(),
-            option_type=opt.index.get_level_values('option_type').to_numpy(),
+            option_type=opt['option_type'].to_numpy(),
             rng=rng,
             n=montecarlo_iterations
         )
@@ -254,89 +234,20 @@ def mc_multi_threading(*args):
         for j in rez[i]:
             _result.append(j)
 
-    return pd.DataFrame.from_records(_result)
+    return pd.DataFrame.from_records(_result, index='symbol')
 
 
 class Modeling:
     def __init__(self, con, option_df):
         self.options = option_df.options  # Options coming in.
-        self.quote = None  # All quote data.
-        self.rf = 0  # Risk-free rate, i.e. 10-yr t-bill for modeling.
-        self.prepare_tables(con)
-
-    def get_quotes(self, con):
-        """
-        Get current price data from TDA
-
-        Source: https://developer.tdameritrade.com/quotes/apis/get/marketdata/quotes
-
-        :return: Current underlying stock price merged into the options table.
-        """
-        import httpx
-        tickers = self.options.index.get_level_values('stock').unique().to_list()
-        q = con.client.get_quotes(tickers)
-        assert q.status_code == httpx.codes.OK, q.raise_for_status()
-
-        prep = [v for k, v in q.json().items()]
-        self.quote = pd.DataFrame.from_dict(prep)
-        self.quote.rename(columns={'symbol': 'stock'}, inplace=True)
+        self.get_last_price(con)
+        self.rf = download.get_risk_free_rate()  # Risk-free rate, i.e. 10-yr t-bill for modeling.
 
     def get_last_price(self, con):
-        self.get_quotes(con)
-        last_price = self.quote[[
-            "stock",
-            # "description",
-            # "bidPrice",
-            # "bidSize",
-            # "bidId",
-            # "askPrice",
-            # "askSize",
-            # "askId",
-            "lastPrice",
-            # "lastSize",
-            # "lastId",
-            # "openPrice",
-            # "highPrice",
-            # "lowPrice",
-            # "closePrice",
-            # "netChange",
-            # "totalVolume",
-            # "quoteTimeInLong",
-            # "tradeTimeInLong",
-            # "mark",
-            # "exchange",
-            # "exchangeName",
-            # "marginable",
-            # "shortable",
-            # "volatility",
-            # "digits",
-            # "52WkHigh",
-            # "52WkLow",
-            # "peRatio",
-            # "divAmount",
-            # "divYield",
-            # "divDate",
-            # "securityStatus",
-            # "regularMarketLastPrice",
-            # "regularMarketLastSize",
-            # "regularMarketNetChange",
-            # "regularMarketTradeTimeInLong",
-        ]]
-        last_price.set_index('stock', inplace=True)
-
-        # pd.merge(self.options, last_price, on='stock')
+        tickers = self.options['stock'].unique().to_list()
+        last_price_dict = download.get_last_price(con, tickers)
+        last_price = pd.DataFrame.from_records(last_price_dict, index='stock')
         self.options = self.options.join(last_price, on='stock')
-
-    def get_risk_free_rate(self):
-        # Get 10-yr risk-free rate from FRED.
-        _url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10"
-        _csv = pd.read_csv(_url)
-        _value = _csv['DGS10'].values[-1]
-        self.rf = float(_value) / 100
-
-    def prepare_tables(self, con):
-        self.get_last_price(con)
-        self.get_risk_free_rate()
 
     def black_scholes(self):
         df = self.options.copy()
@@ -361,23 +272,15 @@ class Modeling:
 
     def probability_of_profits(self, montecarlo_iterations):
         # Probability of profits.
-        msg = f" {self.options.shape[0]} contracts" \
-              f" x {montecarlo_iterations} iterations"
+        # msg = f" {self.options.shape[0]} contracts" \
+        #       f" x {montecarlo_iterations} iterations"
 
         # Generating random range is expensive, so doing it once.
         rng = np.random.Generator(np.random.PCG64())
 
         df = self.options.copy()
 
-        # 1) Simple version.
-        # Disabled because it's significantly slower than multithreading.
-        # print("Numpy Vector" + msg)
-        # pop = mc_numpy_vector(
-        #     curr_price, opt, ten_yr, rng, montecarlo_iterations
-        # )
-
-        # 2) Multiple Threads.
-        print(f"Multi Threading" + msg)
+        # print(f"Multi Threading" + msg)
         # Chunks set to 2, is optimal after experimenting.
         chunks = 2  # How many DTE's to process per Thread.
         pop = mc_multi_threading(
@@ -387,15 +290,6 @@ class Modeling:
             montecarlo_iterations,
             chunks
         )
-        pop.set_index(['symbol'], inplace=True)
 
-        if all(i in df.columns for i in ['putCall', 'symbol']):
-            df = df.drop(columns=['putCall', 'symbol'])
-
-        df.reset_index(inplace=True)
-        df = df.join(pop, on='symbol')
-        df.sort_values(by='symbol', inplace=True)
-        df.set_index(['stock', 'option_type', 'symbol'], inplace=True)
-
-        self.options = df
+        self.options = df.join(pop)
         return self.options

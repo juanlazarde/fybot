@@ -10,5 +10,4 @@ How to use FyBot in 3 seconds:
 
 For more detailed info, see <https://github.com/juanlazarde/fybot>
 """
-from .version import __version__, ___author__
 __import__('pkg_resources').declare_namespace(__name__)

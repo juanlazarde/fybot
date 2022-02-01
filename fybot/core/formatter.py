@@ -11,7 +11,7 @@ df = (df.style.background_gradient(axis=0, subset=list(gradient_cols))
                         'Mark': "${:.2f}",
                         'Delta': "{:.2f}",
                         'IV': "{:.0f}"
-                        })
+                       })
       )
 """
 HI_MAX_COLOR = 'darkgreen'

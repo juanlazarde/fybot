@@ -8,31 +8,43 @@ from time import time as t
 import streamlit as st
 
 from core.fy_tda import TDA
-import core.option_sniper.strategy as sniper_strategy
-from core.option_sniper.download import get_all_tables
-from core.utils import fix_path, Watchlist, optimize_pd
+from core.utils import fix_path, Watchlist
+import core.option_sniper.download as download
 from core.option_sniper.modeling import Modeling
+from core.option_sniper.strategies import OptionStrategy
 
 
 class GetOptions:
     """Get options from TDA or local Pickle file.
 
     Download the options from TDA and save a local copy, or
-    if the market is closed, lods options from the local file.
+    if the market is closed, loads options from the local file.
 
-    :param cfg: Configuration dictionary.
-    :param tda: TDA client.
+    :param param: Configuration dictionary.
+    :param con: TDA client.
     :param wtc: List of symbols to analyze.
     """
-    options = None
+    def __init__(self, param, con, wtc):
+        self.options = None
+        self.wtc = wtc
+        self._tda = con
+        self._param = param
+        self.run()
 
-    def __init__(self, cfg, tda, wtc):
-        self.get_options_from_tda(cfg, tda, wtc)
-        self.clean_options()
-        pickle_name = fix_path(cfg['DEBUG']['data']) + 'options_df.pkl'
+    def run(self):
+        self.filter_wtc_by_price()
+        self.get_options_from_tda()
+        pickle_name = fix_path(self._param['DEBUG']['data']) + 'options_df.pkl'
         is_local, sim_watchlist = self.load_options(pickle_name)
         self.save_options(is_local, pickle_name)
-        self.export_option_results(cfg)
+        self.export_option_results()
+
+    def filter_wtc_by_price(self):
+        price_min = self._param['FILTERS']['min_price']
+        price_max = self._param['FILTERS']['max_price']
+        last_price_list = download.get_last_price(self._tda, self.wtc)
+        self.wtc = [i['stock'] for i in last_price_list
+                    if price_min <= i['lastPrice'] <= price_max]
 
     @staticmethod
     def market_is_open():
@@ -43,55 +55,32 @@ class GetOptions:
                         .astimezone(timezone(timedelta(hours=-5)))
                         .time())
 
-        return ((current_weekday < 5) and
-                (current_time >= time(9, 30)) and
-                (current_time <= time(16, 0)))
+        return (current_weekday < 5 and
+                time(16, 0) >= current_time >= time(9, 30))
 
-    def get_options_from_tda(self, cfg, tda, wtc):
+    def get_options_from_tda(self):
         """Downloads, saves/opens Pickle file &  assigns to Options table."""
-        force_download = cfg['DEBUG']['force_download']
-        if self.market_is_open() or force_download:
-            from_date = datetime.now() + timedelta(cfg['FILTERS']['min_dte'])
-            to_date = datetime.now() + timedelta(cfg['FILTERS']['max_dte'])
-            self.options = get_all_tables(
-                tda_client=tda.client,
-                symbol_list=wtc,
-                min_dte=from_date,
-                max_dte=to_date,
-            )
+        force_download = self._param['DEBUG']['force_download']
+        market_is_open = self.market_is_open()
 
-    def clean_options(self):
-        """
-        Cleanup option chain and optimize DataFrame.
+        if force_download and not market_is_open:
+            st.warning("Market is closed. Download is enforced by settings.")
 
-            1) Filter out columns,
-            2) Filter out rows,
-            3) Lower-range numerical and categoricals dtypes,
-            4) Sparse Columns.
-            5) Re-index.
-
-        :return: Optimized dataframe to self.options
-        """
-        if self.options is None or self.options.empty:
+        if force_download or market_is_open:
+            pass
+        else:
             return
 
-        opt = self.options.copy()
-        # Measure it:
-        # print(f"{sum(opt.memory_usage(deep=True))/1024:,.2f}Kb")
-        opt.replace(["", " ", None, "NaN"], float('NaN'), inplace=True)
-        opt.dropna(axis='columns', how='all', inplace=True)
-        opt = optimize_pd(opt, deal_with_na='drop', verbose=False)
-        opt['volatility'] = opt['volatility'] / 100.
-        opt = opt[
-            (opt['openInterest'] > 0) &
-            (opt['totalVolume'] > 0) &
-            (opt['bid'] > 0) &
-            (opt['ask'] > 0) &
-            (opt['volatility'].astype('float').round(8).values > 0)
-        ]
-        # opt.reset_index(drop=True, inplace=True)
-        # print(f"{sum(opt.memory_usage(deep=True))/1024:,.2f}Kb")
-        self.options = opt
+        now = datetime.now()
+        from_date = now + timedelta(self._param['FILTERS']['min_dte'])
+        to_date = now + timedelta(self._param['FILTERS']['max_dte'])
+        st.write(f"Tables between {from_date:%b-%d-%Y} & {to_date:%b-%d-%Y}:")
+        self.options = download.get_all_tables(
+            tda_client=self._tda.client,
+            symbol_list=self.wtc,
+            min_dte=from_date,
+            max_dte=to_date,
+        )
 
     def load_options(self, name):
         if ((self.options is None or len(self.options.index) < 1) and
@@ -128,17 +117,24 @@ class GetOptions:
                 except IOError as e:
                     st.warning(f"Error: Local file had trouble saving. {e}")
 
-    def export_option_results(self, cfg):
+    def export_option_results(self):
         """Export table to CSV with Options analyzed to data path."""
-        if cfg['DEBUG']['export']:
-            if self.options is not None and len(self.options.index) > 0:
-                suffix = datetime.now().strftime("%y%m%d_%H%M%S")
-                name = f"{fix_path(cfg['DEBUG']['data'])}options_{suffix}.csv"
-                try:
-                    self.options.to_csv(name, index=True, header=True)
-                    st.write("Table saved at: {}".format(name))
-                except IOError as e:
-                    st.error(f"Error attempting to save table. Error: {e}")
+        if not self._param['DEBUG']['export']:
+            return
+
+        if self.options is None:
+            return
+
+        if len(self.options.index) == 0:
+            return
+
+        suffix = datetime.now().strftime("%y%m%d_%H%M%S")
+        name = f"{fix_path(self._param['DEBUG']['data'])}options_{suffix}.csv"
+        try:
+            self.options.to_csv(name, index=True, header=True)
+            st.write("Table saved at: {}".format(name))
+        except IOError as e:
+            st.error(f"Error attempting to save table. Error: {e}")
 
 
 class OptionAnalysis:
@@ -146,44 +142,39 @@ class OptionAnalysis:
     If you want to skip an analysis use the config file or the
     debug_settings
     """
-    def __init__(self, cfg: dict, opt):
+    def __init__(self, param: dict, opt):
         """Concatenates option chains per strategy.
 
-        :param cfg: Configuration dictionary.
+        :param param: Parameter dictionary.
         :param opt: Option chain. Key are symbols and Value DataFrames.
         """
         assert opt is not None, "Option table is empty. (Option Analysis)"
-
         self.result = {}
-
-        strategies = cfg['FILTERS']['strategies'].strip().split(',')
+        strategies = param['FILTERS']['strategies'].strip().split(',')
         strategies = [_.strip() for _ in strategies]
-
+        options = OptionStrategy(opt, param['FILTERS'])
         for strategy in strategies:
-            try:
-                self.run_options(sel=strategy, opt=opt, cfg=cfg)
-            except Exception as e:
-                st.error("Error while running analysis. " + str(e))
-                exit(1)
+            self.run_options(sel=strategy, opt=options, param=param)
 
-    def run_options(self, sel: str, opt, cfg: dict):
-        """Runs the corresponding options analysis.
+    def run_options(self, sel: str, opt, param: dict):
+        """Runs the corresponding Options analysis.
 
         :param sel: Strategy applied.
-        :param cfg: Configuration dictionary.
+        :param param: Configuration dictionary.
         :param opt: options table
         """
         result = None
+
         if sel == 'naked':
-            result = sniper_strategy.naked(opt, cfg['FILTERS'])
+            result = opt.naked()
         elif sel == 'spread':
-            result = sniper_strategy.spread(opt, cfg['FILTERS'])
-        elif sel == 'condor':
-            result = sniper_strategy.condor(opt, cfg['FILTERS'])
-        if cfg['DEBUG']['export']:
+            result = opt.spread()
+        # elif sel == 'condor':
+            # result = sniper_strategy.condor(opt, param['FILTERS'])
+        if param['DEBUG']['export']:
             if result is not None and len(result.index) > 0:
                 suffix = datetime.now().strftime("%y%m%d_%H%M%S")
-                name = f"{fix_path(cfg['DEBUG']['data'])}{sel}_{suffix}.csv"
+                name = f"{fix_path(param['DEBUG']['data'])}{sel}_{suffix}.csv"
                 try:
                     result.to_csv(name, index=True, header=True)
                     st.success("Table saved at: {}".format(name))
@@ -218,25 +209,16 @@ class Progress:
         return result
 
 
-# import core.utils as ut
-# @ut.lineprofile
-def snipe(cfg: dict):
+# Main program
+def snipe(param: dict):
     p = Progress(number_of_functions=6)
     con = p.go("Connecting with TDA", TDA)
-    wtc = p.go("Pulling watchlist", Watchlist.selected, cfg['WATCHLIST']['watchlist_current'])
-    dwn = p.go("Getting option chains", GetOptions, cfg, con, wtc)
+    wtc = p.go("Pulling watchlist", Watchlist.selected, param['WATCHLIST']['watchlist_current'])
+    dwn = p.go("Getting option chains", GetOptions, param, con, wtc)
     ext = p.go("Adding studies to option table", Modeling, con, dwn)
-    # p.go("Black Scholes", ext.black_scholes)
+    # p.go("Black-Scholes", ext.black_scholes)
     p.go("Probability of Profit", ext.probability_of_profits, montecarlo_iterations=5000)
-    result = p.go("Analyzing strategies", OptionAnalysis, cfg, ext.options).result
-
-    # con = TDA()
-    # wtc = Watchlist.selected(cfg['WATCHLIST']['watchlist_current'])
-    # dwn = GetOptions(cfg, con, wtc)
-    # ext = Modeling(con, dwn)
-    # # ext.black_scholes()
-    # ext.probability_of_profits(montecarlo_iterations=100)
-    # result = OptionAnalysis(cfg, ext.options).result
+    result = p.go("Analyzing strategies", OptionAnalysis, param, ext.options).result
 
     return result
 
@@ -245,4 +227,4 @@ if __name__ == '__main__':
     import sys
     sys.path.append("..")
     import fybot.core.settings as ss
-    snipe(cfg=ss.OPTION_SNIPER)
+    snipe(param=ss.OPTION_SNIPER)

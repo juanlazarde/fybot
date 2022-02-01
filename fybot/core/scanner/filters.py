@@ -81,7 +81,7 @@ class Signals:
                 self.signal.loc[symbol, column] = \
                     getattr(self, column)(df=price_data[symbol], symbol=symbol)
 
-            # Remove latest symbol to optimize for speed
+            # Remove the latest symbol to optimize for speed
             price_data.drop(symbol, axis=1, level=0, inplace=True)
 
         log.info("Signal table finished")
@@ -101,7 +101,7 @@ class Signals:
             db.commit()
 
             # save data into signals table database
-            # pd.values deals with an boolean conflict between pandas and SQL
+            # pd.values deals with a boolean conflict between pandas and SQL
             values = [tuple(x) for x in signal_df.values]
             sql = """
                 INSERT INTO signals (symbol_id, study, value)

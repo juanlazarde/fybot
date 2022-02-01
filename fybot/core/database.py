@@ -105,7 +105,7 @@ class Database:
                 self.close()
             now_utc = pytz.utc.localize(datetime.utcnow())
             within24 = None if timestamp is None else \
-                (now_utc - timestamp).seconds <= 24 * 60 * 60
+                (now_utc - timestamp).total_seconds() <= 24 * 60 * 60
         except Exception as e:
             log.debug(e)
             within24 = None

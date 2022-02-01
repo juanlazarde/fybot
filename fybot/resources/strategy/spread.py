@@ -204,9 +204,9 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
         'max_delta': float(filters['max_delta']),
         'min_pop': float(filters['min_pop']) / 100,
         'min_p50': float(filters['min_p50']) / 100,
-        'min_open_int_pctl': float(filters['min_open_int_pctl']) / 100,
-        'min_volume_pctl': float(filters['min_volume_pctl']) / 100,
-        'max_bid_ask_pctl': float(filters['max_bid_ask_pctl']) / 100
+        'min_open_int_pcl': float(filters['min_open_int_pcl']) / 100,
+        'min_volume_pcl': float(filters['min_volume_pcl']) / 100,
+        'max_bid_ask_pcl': float(filters['max_bid_ask_pcl']) / 100
     }
     df: pd.DataFrame = df_in.copy()
     del filters, df_in
@@ -302,13 +302,13 @@ def spread(df_in: pd.DataFrame, filters: Dict) -> pd.DataFrame:
                          .rank(pct=True, ascending=True, method='dense'))
 
     # Filter: Pass 2. Before cross calculations.
-    df = df[df['bid_ask_rank'] >= d['max_bid_ask_pctl']]
+    df = df[df['bid_ask_rank'] >= d['max_bid_ask_pcl']]
     impact['Bid/Ask'] = f"{df.shape[0]/_shp:.0%}"
 
-    df = df[df['open_int_rank'] >= d['min_open_int_pctl']]
+    df = df[df['open_int_rank'] >= d['min_open_int_pcl']]
     impact['Open Interest'] = f"{df.shape[0]/_shp:.0%}"
 
-    df = df[df['volume_rank'] >= d['min_volume_pctl']]
+    df = df[df['volume_rank'] >= d['min_volume_pcl']]
     impact['Volume'] = f"{df.shape[0]/_shp:.0%}"
 
     # Exit if table is empty.

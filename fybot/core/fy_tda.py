@@ -77,7 +77,7 @@ class TDA:
             except Exception as e:
                 msg = f"\nTDA authorization ERROR.\n{e}"
                 log.critical(msg)
-                st.critical(msg)
+                st.error(msg)
                 sys.exit(e)
 
         log.info("Established TDA Ameritrade connection")

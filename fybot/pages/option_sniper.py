@@ -11,7 +11,7 @@ from core.utils import Watchlist
 def export_results(strategy: str, df: pd.DataFrame, path: str) -> None:
     """Exports the resulting table.
 
-    :param strategy: Name of the straegy being exported.
+    :param strategy: Name of the strategy being exported.
     :param df: Each strategy has a dataframe.
     :param path: Path where file will be saved.
     """
@@ -95,7 +95,7 @@ def app():
         label="Choose a watchlist",
         options=_watchlist,
         index=params['WATCHLIST']['selected'],
-        help="Watchlists saved in the profile.",
+        help="Watchlist saved in the profile.",
         key='wtc_sel'
     )
     st.session_state['wtc_latest'] = st.session_state['wtc_sel']
@@ -124,7 +124,7 @@ def app():
 
     # Odds and ends/ Debugging
     with st.sidebar.expander(label="Other settings", expanded=False):
-        # Export tables and data for futher analysis
+        # Export tables and data for further analysis
         params['DEBUG']['export'] = st.checkbox(
             label="Export data to files?",
             value=params['DEBUG']['export'],
@@ -139,7 +139,12 @@ def app():
                  "Data is unreliable because the market is closed"
         )
 
-    # empty space for mobile compatibilty
+        # Calculator
+        import pages.calculator
+        with st.sidebar.expander(label="Profit Calculator", expanded=False):
+            pages.calculator.app()
+
+    # empty space for mobile compatibility
     st.sidebar.write("""
     
     """)
@@ -161,7 +166,7 @@ def app():
         # Filtering
         with st.expander(label="Symbol filters", expanded=False):
             col1, col2, empty = st.columns(3)
-            # Price mimnimum
+            # Price minimum
             params['FILTERS']['min_price'] = col1.number_input(
                 label="Price minimum",
                 min_value=0.00,
@@ -181,7 +186,7 @@ def app():
                 help="Analyze symbols with a price <=  to this number"
             )
 
-        # Formating
+        # Formatting
         col1, col2, col3 = st.columns([1, 1, 1])
 
         # Premium type: credit or debit
@@ -251,7 +256,6 @@ def app():
         params['FILTERS']['max_risk'] = col2.number_input(
             label="Risk maximum",
             min_value=0.00,
-            max_value=100000.00,
             step=100.00,
             value=float(params['FILTERS']['max_risk']),
             help="Maximum amount to be exposed to risk with the investment"
@@ -264,7 +268,7 @@ def app():
             max_value=1000.00,
             step=0.01,
             value=float(params['FILTERS']['min_return_pct']),
-            help="Minumum expected return on investment"
+            help="Minimum expected return on investment"
         )
 
         # How wide is the maximum margin requirement?
@@ -309,30 +313,30 @@ def app():
         )
 
         # Volume, Open Interest, bid/ask percentile
-        params['FILTERS']['min_volume_pctl'] = col3.number_input(
+        params['FILTERS']['min_volume_pcl'] = col3.number_input(
             label="Volume percentile",
             min_value=0.,
             max_value=100.,
             step=1.,
-            value=float(params['FILTERS']['min_volume_pctl']),
+            value=float(params['FILTERS']['min_volume_pcl']),
             help="Volume transactions minimum (larger number = more liquid)."
                  "Further out options are less liquid."
         )
-        params['FILTERS']['min_open_int_pctl'] = col3.number_input(
+        params['FILTERS']['min_open_int_pcl'] = col3.number_input(
             label="Open Interest percentile",
             min_value=0.,
             max_value=100.,
             step=1.,
-            value=float(params['FILTERS']['min_open_int_pctl']),
+            value=float(params['FILTERS']['min_open_int_pcl']),
             help="Open Interest demand minimum (larger number = more liquid)."
                  "Further out options are less liquid."
         )
-        params['FILTERS']['max_bid_ask_pctl'] = col3.number_input(
+        params['FILTERS']['max_bid_ask_pcl'] = col3.number_input(
             label="Bid/Ask spread percentile",
             min_value=0.,
             max_value=100.,
             step=1.,
-            value=float(params['FILTERS']['max_bid_ask_pctl']),
+            value=float(params['FILTERS']['max_bid_ask_pcl']),
             help="Maximum Bid/Ask spread (larger number = more liquid)."
         )
 
@@ -344,7 +348,7 @@ def app():
 
         if hunt:
             with st.spinner("Seeking target..."):
-                # nested_df is a dictionary. Key is stratey, Value is the DF
+                # nested_df is a dictionary. Key is strategy, Value is the DF
                 nested_df = osn.snipe(params)
                 if params['DEBUG']['export']:
                     for k in nested_df:

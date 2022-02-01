@@ -5,8 +5,8 @@ import os
 import config.config as config
 
 # FOR DEBUG ONLY
-DEBUG = False
-MAX_SYMBOLS = 150 if DEBUG else None
+DEBUG = True
+MAX_SYMBOLS = 20 if DEBUG else None
 
 # define files
 DATASET_DIR = '../datasets'
@@ -108,9 +108,9 @@ OPTION_SNIPER = {
         'max_delta': 0.30,
         'min_pop': 0.,
         'min_p50': 0.,
-        'min_volume_pctl': 5.,
-        'min_open_int_pctl': 5.,
-        'max_bid_ask_pctl': 50.,
+        'min_volume_pcl': 50.,
+        'min_open_int_pcl': 50.,
+        'max_bid_ask_pcl': 50.,
         'margin_requirement': 20000.,
     },
 }

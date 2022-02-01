@@ -3,10 +3,33 @@ from datetime import date
 
 import httpx
 import streamlit as st
-
-import numpy as np
 import pandas as pd
+
 from tda.client.synchronous import Client
+
+from core.utils import optimize_pd
+
+
+def get_quotes(tda, symbol_list: list):
+    """
+    Get current price data from TDA
+
+    Source: https://developer.tdameritrade.com/quotes/apis/get/marketdata/quotes
+
+    :return: Current underlying stock price merged into the options table.
+    """
+    q = tda.client.get_quotes(symbol_list)
+    assert q.status_code == httpx.codes.OK, q.raise_for_status()
+
+    prep = [v for k, v in q.json().items()]
+    quote = pd.DataFrame(prep)
+    quote.rename(columns={'symbol': 'stock'}, inplace=True)
+    return optimize_pd(quote)
+
+
+def get_last_price(tda, symbol_list: list):
+    quote = get_quotes(tda, symbol_list)
+    return quote[['stock', 'lastPrice']].to_dict(orient='records')
 
 
 def get_all_tables(tda_client,
@@ -15,18 +38,13 @@ def get_all_tables(tda_client,
                    min_dte: date):
     """Concatenates option chains in the symbol list, within date range.
 
-    Args:
-        tda_client: TDA API client information.
-        symbol_list: List of symbols to be analyzed.
-        max_dte: Max date to expiration to be downloaded.
-        min_dte: Min date to expiration to be downloaded.
-
-    Returns:
-        Dataframe with Option Chains. Blank if market is closed.
+    :param tda_client: TDA API client information.
+    :param symbol_list: List of symbols to be analyzed.
+    :param max_dte: Maximum date to expiration to be downloaded.
+    :param min_dte: Minimum date to expiration to be downloaded.
+    :return: Dataframe with Option Chains. Blank if market is closed.
     """
     # TODO: Filter out stocks by underlying price
-
-    st.write(f"Tables between {min_dte:%b-%d-%Y} & {max_dte:%b-%d-%Y} for:")
 
     option_collection = []
     for symbol in symbol_list:
@@ -40,32 +58,10 @@ def get_all_tables(tda_client,
         )
 
     final_options = pd.concat(option_collection)
-    final_options.rename(columns={'putCall': 'option_type'}, inplace=True)
-    final_options['option_type'] = final_options['option_type'].str.lower()
-    final_options.set_index(['stock', 'option_type', 'symbol'], inplace=True)
+    return cleanup_option_table(final_options)
 
-    return final_options
-    # TODO: Delete these lines once other code is verified.
-    #
-    # options_df = None
-    # options = {}
-    # for symbol in symbol_list:
-    #     try:
-    #         options[symbol] = get_one_table(
-    #             tda_client=tda_client,
-    #             symbol=symbol,
-    #             max_dte=max_dte,
-    #             min_dte=min_dte
-    #         )
-    #     except Exception as e:
-    #         st.error(f"   - {symbol} Failed. Error: {e}")
-    # if len(options) != 0:
-    #     options_df = pd.concat(options)
-    #     options_df.index.set_names(
-    #         ['stock', 'option_type', 'symbol'],
-    #         inplace=True
-    #     )
-    # return options_df
+    # TODO: Delete the line below.
+    # final_options.set_index(['stock', 'option_type', 'symbol'], inplace=True)
 
 
 def get_one_table(tda_client,
@@ -74,14 +70,11 @@ def get_one_table(tda_client,
                   min_dte: date):
     """Downloads and creates options table per symbol.
 
-    Args:
-        tda_client: TDA API client information.
-        symbol: List of symbols to be analyzed.
-        max_dte: Max date to expiration to be downloaded.
-        min_dte: Min date to expiration to be downloaded.
-
-    Returns:
-        options_table (data frame):  puts and calls for all dates within DTE.
+    :param tda_client: TDA API client information.
+    :param symbol: Symbol to be analyzed.
+    :param max_dte: Maximum date to expiration to be downloaded.
+    :param min_dte: Minimum date to expiration to be downloaded.
+    :return: Dataframe with Option Chains for one Symbol.
     """
     r = tda_client.get_option_chain(
         symbol=symbol,
@@ -92,7 +85,6 @@ def get_one_table(tda_client,
         interval=None,
         strike=None,
         strike_range=Client.Options.StrikeRange.ALL,
-        # ALL, IN_THE_MONEY, OUT_OF_THE_MONEY
         from_date=min_dte,
         to_date=max_dte,
         volatility=None,
@@ -106,11 +98,11 @@ def get_one_table(tda_client,
 
     options = r.json()
 
-    st.write(f"   {symbol}, ${options['underlyingPrice']:.2f}")
-    return unpack_option_tables(options)
+    st.write(f"{symbol}, ${options['underlyingPrice']:.2f}")
+    return unpack_option_table(options)
 
 
-def unpack_option_tables(options):
+def unpack_option_table(options):
     """
     Unpacks Option Chains from TDA.
 
@@ -126,6 +118,45 @@ def unpack_option_tables(options):
         for strike in opt["putExpDateMap"][_date]:
             ret.extend(opt["putExpDateMap"][_date][strike])
     df = pd.DataFrame(ret)
+    df['stock'] = opt['symbol']
+    return df
+
+
+def cleanup_option_table(options: pd.DataFrame):
+    """
+    Cleanup option chain and optimize DataFrame.
+
+        1) Filter out columns,
+        2) Filter out rows,
+        3) Lower-range numerical and categories dtypes,
+        4) Sparse Columns.
+        5) Re-index.
+     -> 6) CUSTOMIZE OPTION (i.e. TDA-specific changes)
+
+    :return: Optimized dataframe
+    """
+    if options is None or options.empty:
+        return
+
+    opt = options.copy()
+    # Measure it:
+    # print(f"{sum(opt.memory_usage(deep=True))/1024:,.2f}Kb")
+    opt.replace(["", " ", None, "NaN"], float('NaN'), inplace=True)
+    opt.dropna(axis='columns', how='all', inplace=True)
+    opt = optimize_pd(opt, deal_with_na='drop', verbose=False)
+
+    # TDA-specific changes.
+    opt['volatility'] = opt['volatility'] / 100.
+    opt = opt[
+        (opt['openInterest'] > 0) &
+        (opt['totalVolume'] > 0) &
+        (opt['bid'] > 0) &
+        (opt['ask'] > 0) &
+        (opt['volatility'].astype('float').round(8).values > 0)
+    ]
+    opt.rename(columns={'putCall': 'option_type'}, inplace=True)
+    opt['option_type'] = opt['option_type'].str.lower()
+
     time_cols = [
         "tradeTimeInLong",
         "quoteTimeInLong",
@@ -133,65 +164,20 @@ def unpack_option_tables(options):
         "lastTradingDay"
     ]
     for col in time_cols:
-        df[col] = pd.to_datetime(df[col], unit="ms")
-    df['stock'] = opt['symbol']
-    return df
+        opt[col] = pd.to_datetime(opt[col], unit='ms')
+
+    opt.sort_values(
+        by=['stock', 'daysToExpiration', 'option_type', 'strikePrice'],
+        inplace=True
+    )
+    opt.set_index('symbol', inplace=True)
+    # print(f"{sum(opt.memory_usage(deep=True))/1024:,.2f}Kb")
+    return opt
 
 
-def unpack_table_old(options, symbol):
-    if options['status'] == "SUCCESS":
-        try:
-            calls = pd.json_normalize(
-                options['callExpDateMap'],
-                record_prefix='Prefix.'
-            )
-            puts = pd.json_normalize(
-                options['putExpDateMap'],
-                record_prefix='Prefix.'
-            )
-
-            del options
-
-            # unpack json format
-            tables = {
-                'call':
-                    pd.DataFrame.from_dict(
-                        calls.loc[0][0][0],
-                        orient='index'
-                    ),
-                'put':
-                    pd.DataFrame.from_dict(
-                        puts.loc[0][0][0],
-                        orient='index'
-                    )
-            }
-
-            for i in range(len(calls.columns)):
-                if len(calls.loc[0][i]) == 1:
-                    if np.logical_not(pd.isna(calls.loc[0][i])):
-                        tables['call'][i] = pd.DataFrame.from_dict(
-                            calls.loc[0][i][0], orient='index')
-                else:
-                    if np.logical_not(pd.isna(calls.loc[0][i][0])):
-                        tables['call'][i] = pd.DataFrame.from_dict(
-                            calls.loc[0][i][0], orient='index')[0]
-                if len(puts.loc[0][i]) == 1:
-                    if np.logical_not(pd.isna(puts.loc[0][i])):
-                        tables['put'][i] = pd.DataFrame.from_dict(
-                            puts.loc[0][i][0], orient='index')
-                else:
-                    if np.logical_not(pd.isna(puts.loc[0][i][0])):
-                        tables['put'][i] = pd.DataFrame.from_dict(
-                            puts.loc[0][i][0], orient='index')[0]
-
-            tables['call'].columns = tables['call'].loc['symbol']
-            tables['put'].columns = tables['put'].loc['symbol']
-
-            options_table = pd.concat(tables, axis=1)
-
-            return options_table.T
-
-        except Exception as e:
-            st.error(f"     - {symbol} Failed. Error: {e}")
-    else:
-        raise Exception(f"Failed to Download. Perhaps {symbol} doesn't exist.")
+def get_risk_free_rate():
+    # Get 10-yr risk-free rate from FRED.
+    url = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10"
+    csv = pd.read_csv(url)
+    value = csv['DGS10'].values[-1]
+    return float(value) / 100

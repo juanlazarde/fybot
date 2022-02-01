@@ -138,14 +138,14 @@ def condor(df, filters):
    max_risk = float(filters['max_risk'])
    min_return_pct = float(filters['min_return_pct'])
    min_dte = int(filters['min_dte'])
-   max_bid_ask_pctl = float(filters['max_bid_ask_pctl'])
+   max_bid_ask_pcl = float(filters['max_bid_ask_pcl'])
     '''
     divider()
     print("CONDOR HACKER\n" +
           "=" * 13)
     max_delta = float(filters['max_delta'])
-    min_open_int_pctl = int(filters['min_open_int_pctl'])
-    min_volume_pctl = int(filters['min_volume_pctl'])
+    min_open_int_pcl = int(filters['min_open_int_pcl'])
+    min_volume_pcl = int(filters['min_volume_pcl'])
     top_n = int(filters['top_n'])
     min_bid_size = int(filters['min_bid_size'])
     min_ask_size = int(filters['min_ask_size'])
@@ -156,10 +156,10 @@ def condor(df, filters):
     if len(df.index) == 0:
         exit("No options tables to analyze")
     df = df[(df['inTheMoney'] is False)]
-    df = df[df['openInterest'] >= min_open_int_pctl]
+    df = df[df['openInterest'] >= min_open_int_pcl]
     df = df[df['bidSize'] >= min_bid_size]
     df = df[df['askSize'] >= min_ask_size]
-    df = df[df['totalVolume'] >= min_volume_pctl]
+    df = df[df['totalVolume'] >= min_volume_pcl]
 
     if len(df.index) == 0:
         print("\n\n*** Nothing to see here! There're no symbols/instruments "

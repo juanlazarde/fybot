@@ -55,6 +55,10 @@ class Scan:
         symbol_name = symbol_name.set_index(['symbol'])
 
         self.signals.index.name = 'symbol'
+        # Consider this optimized Merge.
+        # def optimized_merge(df1, df2, merge_column):
+        #     df2 = df2[df2[merge_column].isin(df1[merge_column])]
+        #     return df1.merge(df2, on=merge_column)
         self.signals = symbol_name.join(self.signals, on='symbol', how='inner')
 
         return self.signals

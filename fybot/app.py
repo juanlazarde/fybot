@@ -24,9 +24,29 @@ PAGES = {
     "News": pages.news,
     "Scan": pages.scanner,
     "Option Sniper": pages.option_sniper,
+    "Calculator": pages.calculator,
     "Technical Charts": pages.technical_charts,
     "Encrypt TDA Account": pages.encrypt_tda_account,
 }
+HACK_CSS = """
+<style>
+
+/* Hide the hamburger menu */
+/*#MainMenu {visibility: hidden;}*/
+
+/* Hide Streamlit footer */
+footer {visibility: hidden;}
+
+/* Hide items in hamburger*/
+ul[data-testid=main-menu-list] > li:nth-of-type(4), /* Documentation */
+ul[data-testid=main-menu-list] > li:nth-of-type(5), /* Ask a question */
+ul[data-testid=main-menu-list] > li:nth-of-type(6), /* Report a bug */
+ul[data-testid=main-menu-list] > li:nth-of-type(7), /* Streamlit for Teams */
+ul[data-testid=main-menu-list] > div:nth-of-type(2) /* 2nd divider */
+{display: none;}
+
+</style>
+"""
 
 
 def main():
@@ -41,6 +61,7 @@ def main():
             'About': MENU_ABOUT
         }
     )
+    st.markdown(HACK_CSS, unsafe_allow_html=True)
     st.sidebar.markdown(f"Hi, **{ss.USER_NAME}**")
     st.sidebar.title('Navigation')
     selection = st.sidebar.selectbox(

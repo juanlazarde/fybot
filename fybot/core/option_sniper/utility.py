@@ -11,7 +11,7 @@ ver 1.1 Included undeclared modules
         Included Path from configuration files
         Replaced two different NASDAQ files to get the Symbols with one file
         Added NASDAQTRADEDLIST of Symbols download from FTP
-        Downloads the Symbols if they don't exist or they're a week old
+        Downloads the Symbols if they don't exist, or they're a week old
 """
 import os
 import platform
@@ -57,7 +57,7 @@ def download_symbols(reference_path="data/"):
 
     Args:
         reference_path (str): Local path to save the symbols file. By
-        default is 'data/'
+        default, is 'data/'
     """
     ftp_path = 'symboldirectory'
     ftp_filename = 'nasdaqtraded.txt'
@@ -181,7 +181,7 @@ def split(a, n):
         n (double): number of pieces.
 
     Returns:
-        List divided in to n number of batches.
+        List divided into n number of batches.
     """
     k, m = divmod(len(a), n)
 

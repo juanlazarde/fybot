@@ -25,6 +25,7 @@ def refresh_data(forced: bool = False, save_to_file: bool = False):
     s = t()
     symbols = sn.GetAssets(forced).symbols
     sn.GetFundamental(symbols, forced)
+    print("Fundamentals Done")
     sn.GetPrice(symbols, forced)
 
     if save_to_file:

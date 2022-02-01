@@ -89,15 +89,15 @@ def timeit(method):
     return timed
 
 
-def lineprofile(func):
+def line_profile(func):
     """
     Line Profile decorator shows time usage per line.
 
     Use:
     ::
-        from utils import lineprofile
+        from utils import line_profile
 
-        @lineprofile
+        @line_profile
         def function_to_profile(numbers):
             do_something = numbers
 
@@ -201,8 +201,8 @@ def optimize_pd(
     if obj_ser.empty is False:
         obj_i = obj_ser.index
         for c in obj_i:
-            # Skip conversion ii there're any numbers in the series.
-            if df[c].apply(lambda x: isinstance(x, (float, int))).any():
+            # Skip conversion if there are any numbers in the series.
+            if df[c].map(lambda x: isinstance(x, (float, int))).any():
                 continue
             # If more than 50% of the series are unique then categorize.
             if len(df[c].unique()) / len(df[c]) < 0.5:
@@ -215,7 +215,7 @@ def optimize_pd(
 
 
 class Watchlist:
-    """Functions to be used with watchlists and symbols
+    """Functions to be used with watchlist and symbols
     Returns the final watchlist to be used.
     """
     @staticmethod

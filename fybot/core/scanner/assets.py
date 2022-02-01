@@ -185,13 +185,13 @@ class GetAssets:
 
     @staticmethod
     def apply_filters(df):
-        """Apply filters to Symbols Series.
+        """Apply filters to Symbol Series.
 
-        Removes symbols with characters like .=^-. These are usually special
+        Removes symbol with characters like .=^-. These are usually special
         symbols for Units, Series A, B, Indices, and others. These have
         conflicts across platforms and would have to be harmonized.
         i.e. TDA GRP.U is YAHOO's GRP-UN. These usually have small volume
-        and no options anyways.
+        and no options anyway.
 
         :param df: Symbol DataFrame
         """
