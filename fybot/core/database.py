@@ -84,8 +84,7 @@ class Database:
 
     def create_table(self):
         """create table in database"""
-
-        sql = self.parse_sql("config/create_tables.sql")
+        sql = self.parse_sql("fybot/config/create_tables.sql")
         for i in sql:
             self.execute(i)
 
@@ -105,7 +104,7 @@ class Database:
                 self.close()
             now_utc = pytz.utc.localize(datetime.utcnow())
             within24 = None if timestamp is None else \
-                (now_utc - timestamp).seconds <= 24 * 60 * 60
+                (now_utc - timestamp).total_seconds() <= 24 * 60 * 60
         except Exception as e:
             log.debug(e)
             within24 = None

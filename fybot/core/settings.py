@@ -6,7 +6,7 @@ import config.config as config
 
 # FOR DEBUG ONLY
 DEBUG = False
-MAX_SYMBOLS = 150 if DEBUG else None
+MAX_SYMBOLS = 2 if DEBUG else None #TODO: check recursion issue here
 
 # define files
 DATASET_DIR = '../datasets'
