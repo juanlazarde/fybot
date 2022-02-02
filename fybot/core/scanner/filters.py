@@ -65,7 +65,7 @@ class Signals:
         """cleanup and format price_history"""
 
         price_data = sn.GetPrice(symbols).data
-        price_data = price_data.drop(['adj_close'], axis=1)
+        # price_data = price_data.drop(['adj_close'], axis=1)
         price_data = price_data.set_index(['date', 'symbol'])
         price_data = price_data.unstack()
         return price_data.swaplevel(axis=1)
