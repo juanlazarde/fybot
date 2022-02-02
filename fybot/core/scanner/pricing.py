@@ -8,6 +8,7 @@ import asyncpg
 import httpx
 import pandas as pd
 import yfinance as yf
+from sqlalchemy import create_engine
 
 from core.database import Database
 import core.settings as ss
@@ -79,7 +80,6 @@ class GetPrice:
             NOT IN (SELECT symbol_id FROM rejected_symbols)
             ORDER BY symbols.symbol, price_history.date;
             """
-
         with Database() as db:
             df = pd.read_sql_query(query, con=db.connection)
         log.debug("Loaded price history from database")

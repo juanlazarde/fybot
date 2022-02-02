@@ -109,6 +109,7 @@ class GetAssets:
         log.critical('Could not download the Symbols. Check code/sources')
         sys.exit(1)
 
+    # noinspection SpellCheckingInspection
     @staticmethod
     def download_from_nasdaq():
         """Downloads NASDAQ-traded stock/ETF Symbols, from NASDAQ FTP.
@@ -122,7 +123,7 @@ class GetAssets:
         updated nightly. Logs into ftp.nasdaqtrader.com, anonymously, and
         browses for SymbolDirectory.
         ftp://ftp.nasdaqtrader.com/symboldirectory
-        http://www.nasdaqtrader.com/trader.aspx?id=symboldirdefs
+        https://www.nasdaqtrader.com/trader.aspx?id=symboldirdefs
 
         :return: Symbols and Security names in DataFrame object"""
 
@@ -205,10 +206,11 @@ class GetAssets:
 
     @staticmethod
     def unique_id(df):
+        # noinspection SpellCheckingInspection
         """Create and embeds a Unique ID for every symbol.
 
-        symbol_id = symbol filled with 0 up to 6 digits + first 6 chars
-        of name, all alphanumeric. Example: 0000PGPROCTE"""
+                symbol_id = symbol filled with 0 up to 6 digits + first 6 chars
+                of name, all alphanumeric. Example: 0000PGPROCTE"""
         result = (
                 df['symbol']
                 .str.replace('[^a-zA-Z0-9]', '', regex=True)

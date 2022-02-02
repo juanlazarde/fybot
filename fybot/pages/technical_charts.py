@@ -174,7 +174,7 @@ def app():
     st.header(f"""
               Extended Market Calculator\n {symbol}
               """)
-    st.dataframe(frame.style.hide_index())
+    st.dataframe(frame.style.hide(axis='index'))
 
     # fixed bin size
     bins = np.arange(-100, 100, 1)

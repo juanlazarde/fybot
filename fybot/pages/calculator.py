@@ -28,7 +28,7 @@ def app():
     df['Margin'] = max_profit / qty / 100 * (1 - df['Profit'] / 100)
     color = "background-color: #3d3d3d;"
     df = (df.style
-          .hide_index()
+          .hide(axis='index')
           .format(precision=0, formatter={'Profit': '{:.0f}%', 'Margin': '${:.2f}'})
           .apply(lambda i: [color if j == highlight else '' for j in i])
           )
