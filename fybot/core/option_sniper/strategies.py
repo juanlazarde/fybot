@@ -7,6 +7,8 @@ import streamlit as st
 from scipy.spatial.distance import cdist
 
 import core.formatter as fm
+
+
 # from core.utils import line_profile
 
 
@@ -146,9 +148,15 @@ class OptionStrategy:
 
         # Calculated columns.
         df['bid_ask_pct'] = df['ask'] / df['bid'] - 1
-        df['bid_ask_rank'] = df.groupby(['stock', 'option_type', 'daysToExpiration'])['bid_ask_pct'].rank(pct=True, ascending=False, method='dense')
-        df['open_int_rank'] = df.groupby(['stock', 'option_type', 'daysToExpiration'])['openInterest'].rank(pct=True, ascending=True, method='dense')
-        df['volume_rank'] = df.groupby(['stock', 'option_type', 'daysToExpiration'])['totalVolume'].rank(pct=True, ascending=True, method='dense')
+        df['bid_ask_rank'] = df.groupby(['stock', 'option_type', 'daysToExpiration'])['bid_ask_pct'].rank(pct=True,
+                                                                                                          ascending=False,
+                                                                                                          method='dense')
+        df['open_int_rank'] = df.groupby(['stock', 'option_type', 'daysToExpiration'])['openInterest'].rank(pct=True,
+                                                                                                            ascending=True,
+                                                                                                            method='dense')
+        df['volume_rank'] = df.groupby(['stock', 'option_type', 'daysToExpiration'])['totalVolume'].rank(pct=True,
+                                                                                                         ascending=True,
+                                                                                                         method='dense')
 
         # Filter: Pass 2
         df = df[df['bid_ask_rank'] >= p['max_bid_ask_pcl']]
@@ -224,31 +232,29 @@ class OptionStrategy:
         # Format results.
         min_max = ['Return', 'Max Profit', 'Daily Return', 'Prob ITM', 'Prob 50%']
         df_styled = (
-            df.style.set_table_styles(
-                        [dict(selector='th', props=[('text-align', 'left')])]
-                    )
-                    .set_properties(**{'text-align': 'right'})
-                    .background_gradient(
-                    axis=0,
-                    subset=['Return', 'Daily Return']
+                df.style
+                .set_table_styles([dict(selector='th', props=[('text-align', 'left')])])
+                .set_properties(**{'text-align': 'right'})
+                .background_gradient(axis=0, subset=['Return', 'Daily Return'])
+                .highlight_max(subset=min_max, color=fm.HI_MAX_COLOR)
+                .highlight_min(subset=min_max, color=fm.HI_MIN_COLOR)
+                .format(
+                    {
+                        'Return': fm.PERCENT2,
+                        'Daily Return': fm.PERCENT2,
+                        'Max Profit': fm.DOLLAR,
+                        'Risk': fm.DOLLAR,
+                        'Margin Req\'d': fm.DOLLAR,
+                        'Break Even': fm.DOLLAR,
+                        'Qty': fm.FLOAT0 + "x",
+                        'Prem Mark': fm.DOLLAR,
+                        'Delta': fm.FLOAT,
+                        'Theo Value': fm.DOLLAR,
+                        'Prob ITM': fm.PERCENT0,
+                        'Prob 50%': fm.PERCENT0,
+                        'DTE': fm.FLOAT0,
+                    }
                 )
-                    .highlight_max(subset=min_max, color=fm.HI_MAX_COLOR)
-                    .highlight_min(subset=min_max, color=fm.HI_MIN_COLOR)
-                    .format({
-                    'Return': fm.PERCENT2,
-                    'Daily Return': fm.PERCENT2,
-                    'Max Profit': fm.DOLLAR,
-                    'Risk': fm.DOLLAR,
-                    'Margin Req\'d': fm.DOLLAR,
-                    'Break Even': fm.DOLLAR,
-                    'Qty': fm.FLOAT0 + "x",
-                    'Prem Mark': fm.DOLLAR,
-                    'Delta': fm.FLOAT,
-                    'Theo Value': fm.DOLLAR,
-                    'Prob ITM': fm.PERCENT0,
-                    'Prob 50%': fm.PERCENT0,
-                    'DTE': fm.FLOAT0,
-                })
         )
         return df_styled
 
@@ -324,6 +330,7 @@ class OptionStrategy:
 
     def spread(self):
         """Returns dataframe with Vertical Credit Spreads."""
+
         def spread_calculator(df_in: pd.DataFrame) -> Dict[str, dict]:
             """
             Calculates spread combinations to maximize profit.
@@ -332,6 +339,7 @@ class OptionStrategy:
             :param df_in: Dataframe with option chain.
             :return: Dictionary with best spreads by date.
             """
+
             def distance_matrix(df_ask: pd.DataFrame, df_bid: pd.DataFrame) -> pd.DataFrame:
                 """
                 Calculates difference in a 2D matrix (Ask rows & Bid columns).
@@ -382,7 +390,7 @@ class OptionStrategy:
 
             for k in spread_dict:
                 for s in stock_list:
-                    if (k, s) not in dfx.index:  #if ('call', 'RIVN') in list(zip(list(zip(*dfx.index))[0], list(zip(*dfx.index))[1])):
+                    if (k, s) not in dfx.index:  # if ('call', 'RIVN') in list(zip(list(zip(*dfx.index))[0], list(zip(*dfx.index))[1])):
                         continue
                     df1 = dfx.xs((k, s), axis=0)
                     df1 = df1.sort_index(axis=1)
@@ -392,14 +400,16 @@ class OptionStrategy:
                     df1 = pd.DataFrame(df1, columns=['prem_bid_ask'])
                     df1.index = df1.index.set_names(new_key)
                     df1 = df1.reset_index()
-                    df1['vertical'] = (
-                            df1['short_strikePrice'].map("{0:g}".format)
-                            + '/'
-                            + df1['long_strikePrice'].map("{0:g}".format)
-                    )
+                    df1['spread'] = df1['short_strikePrice'] - df1['long_strikePrice']
+                    df1['prem_mark'] = df1['short_mark'] - df1['long_mark']
+                    if k == 'put':
+                        df1['delta'] *= -1
+                    else:
+                        df1['spread'] *= -1
+                    df1 = df1[df1['spread'] > 0]
+                    df1['vertical'] = (df1['short_strikePrice'].map("{0:g}".format) + '/' + df1['long_strikePrice'].map("{0:g}".format))
                     df1.set_index('vertical', inplace=True)
                     spread_dict[k][s] = df1
-
             return spread_dict
 
         # Variable assignment.
@@ -454,13 +464,19 @@ class OptionStrategy:
         dte_sorted: List[int] = sorted(df['daysToExpiration'].unique())  # List of DTE's to iterate
         for dte_current in dte_sorted:
             dte_dict_spreads: Dict = spread_calculator(df[df['daysToExpiration'] == dte_current])
-            dte_dict_spreads_put_call: Dict = {
-                'put': pd.concat(dte_dict_spreads['put']),
-                'call': pd.concat(dte_dict_spreads['call'])
-            }  # Separates Puts/Calls
-            collector[dte_current] = pd.concat(dte_dict_spreads_put_call)  # Dictionary that collects DataFrames from all DTE's
-            # del dte_dict_spreads, dte_dict_spreads_put_call  # Ensures previous data won't corrupt new data in the cycle
+            dte_dict_spreads_put_call: Dict = {}
+            puts_avail = len(dte_dict_spreads['put']) != 0
+            calls_avail = len(dte_dict_spreads['call']) != 0
+            if puts_avail:
+                dte_dict_spreads_put_call['put'] = pd.concat(dte_dict_spreads['put'])
+            if calls_avail:
+                dte_dict_spreads_put_call['call'] = pd.concat(dte_dict_spreads['call'])
+            if not puts_avail and not calls_avail:
+                continue
+            collector[dte_current] = pd.concat(
+                dte_dict_spreads_put_call)  # Dictionary that collects DataFrames from all DTE's
 
+        del dte_dict_spreads, dte_dict_spreads_put_call  # Cleanup
         df = pd.concat(collector)  # DataFrame that holds all spreads. Index: call/put, stock, vert(short/long)
         df = df.droplevel(level=0)  # Remove DTE from the Index
         df.index.set_names(inplace=True, names=['option_type', 'stock', 'vertical'])
@@ -468,11 +484,6 @@ class OptionStrategy:
 
         # ------- output
         # Calculate all metrics
-        df['spread'] = df['short_strikePrice'] - df['long_strikePrice']
-        df = df[df['spread'] > 0]
-        df['prem_mark'] = df['short_mark'] - df['long_mark']
-        df.loc[df['option_type'] == 'put', 'delta'] = df['delta'] * -1
-        df.loc[df['option_type'] == 'call', 'spread'] = df['spread'] * -1
         df['break_even'] = df['short_strikePrice'] - df['prem_mark']
         df['margin_requirement'] = df['multiplier'] * df['spread']
         df['max_profit'] = df['multiplier'] * df['prem_mark']
@@ -496,26 +507,26 @@ class OptionStrategy:
         lower_m = [m.lower() for m in month_abbr]
         df['search'] = (
             # stock
-                df['description'].str.split(' ').str[0].astype(str)
-                # day
-                + " "
-                + df['description'].str.split(' ').str[2].astype(str)
-                # month
-                + "/"
-                + (df['description'].str.split(' ').str[1].astype(str)
-                   .map(lambda m: lower_m.index(m.lower())).astype(str))
-                # year
-                # + "/"
-                # + df['description'].str.split(' ').str[3].str[::3].astype(str)
-                # dte
-                + " ("
-                + df['daysToExpiration'].map('{:.0f}'.format).astype(str)
-                + ") "
-                # option type put or call
-                + df['option_type'].str.upper().astype(str).str[0]
-                # short and long strike price
-                + " "
-                + df['vertical'].astype(str)
+            df['description'].str.split(' ').str[0].astype(str)
+            # day
+            + " "
+            + df['description'].str.split(' ').str[2].astype(str)
+            # month
+            + "/"
+            + (df['description'].str.split(' ').str[1].astype(str)
+               .map(lambda m: lower_m.index(m.lower())).astype(str))
+            # year
+            # + "/"
+            # + df['description'].str.split(' ').str[3].str[::3].astype(str)
+            # dte
+            + " ("
+            + df['daysToExpiration'].map('{:.0f}'.format).astype(str)
+            + ") "
+            # option type put or call
+            + df['option_type'].str.upper().astype(str).str[0]
+            # short and long strike price
+            + " "
+            + df['vertical'].astype(str)
         )
 
         # More filters
