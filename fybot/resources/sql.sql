@@ -105,7 +105,6 @@ CREATE TABLE IF NOT EXISTS price_history (
     high NUMERIC (10, 2) NOT NULL,
     low NUMERIC (10, 2) NOT NULL,
     close NUMERIC (10, 2) NOT NULL,
-    adj_close NUMERIC (10, 2) NOT NULL,
     volume INTEGER NOT NULL,
     PRIMARY KEY (symbol_id, date),
     CONSTRAINT fk_symbol
@@ -327,7 +326,6 @@ SELECT price_history.date,
     price_history.high,
     price_history.low,
     price_history.close,
-    price_history.adj_close,
     price_history.volume
 FROM price_history
 INNER JOIN symbols

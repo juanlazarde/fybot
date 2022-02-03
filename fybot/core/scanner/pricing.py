@@ -71,7 +71,6 @@ class GetPrice:
                 price_history.high,
                 price_history.low,
                 price_history.close,
-                price_history.adj_close,
                 price_history.volume
             FROM price_history
             INNER JOIN symbols
@@ -107,16 +106,15 @@ class GetPrice:
         values = [list(row) for row in rows]
         sql = """
             INSERT INTO price_history (date, symbol_id, open, high, low,
-                                       close, adj_close, volume)
+                                       close, volume)
             VALUES ($1, (SELECT id FROM symbols WHERE symbol=$2),
-                    $3, $4, $5, $6, $7, $8)
+                    $3, $4, $5, $6, $7)
             ON CONFLICT (symbol_id, date)
             DO UPDATE
             SET symbol_id=excluded.symbol_id,
                 date=excluded.date, open=excluded.open,
                 high=excluded.high, low=excluded.low,
                 close=excluded.close,
-                adj_close=excluded.adj_close,
                 volume=excluded.volume;
             """
 
