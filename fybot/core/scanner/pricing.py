@@ -8,7 +8,6 @@ import asyncpg
 import httpx
 import pandas as pd
 import yfinance as yf
-from sqlalchemy import create_engine
 
 from core.database import Database
 import core.settings as ss
@@ -79,6 +78,7 @@ class GetPrice:
             NOT IN (SELECT symbol_id FROM rejected_symbols)
             ORDER BY symbols.symbol, price_history.date;
             """
+
         with Database() as db:
             df = pd.read_sql_query(query, con=db.connection)
         log.debug("Loaded price history from database")
@@ -87,6 +87,7 @@ class GetPrice:
     @staticmethod
     def download(symbols: list, source: str):
         source = 'con' if (source == '' or source is None) else source
+
         if source == 'con':
             # df = asyncio.run(Source().tda(symbols=symbols))
             df = asyncio.run(Source.tda(symbols=symbols))
@@ -105,8 +106,8 @@ class GetPrice:
         rows = data.itertuples(index=False)
         values = [list(row) for row in rows]
         sql = """
-            INSERT INTO price_history (date, symbol_id, open, high, low,
-                                       close, volume)
+            INSERT INTO price_history (date, symbol_id, open, high, 
+                                       low, close, volume)
             VALUES ($1, (SELECT id FROM symbols WHERE symbol=$2),
                     $3, $4, $5, $6, $7)
             ON CONFLICT (symbol_id, date)
@@ -162,10 +163,10 @@ class Source(GetPrice):
             # download chunk of fundamentals from TDA
             resp = await con.client.get_price_history(
                 symbol_chunk,
-                period_type=con.client.PriceHistory.PeriodType.YEAR,
-                frequency_type=con.client.PriceHistory.FrequencyType.DAILY,
-                frequency=con.client.PriceHistory.Frequency.DAILY,
-                period=con.client.PriceHistory.Period.ONE_YEAR,
+                period_type=client.Client.PriceHistory.PeriodType.YEAR,
+                frequency_type=client.Client.PriceHistory.FrequencyType.DAILY,
+                frequency=client.Client.PriceHistory.Frequency.DAILY,
+                period=client.Client.PriceHistory.Period.ONE_YEAR,
                 # start_datetime=start_date,
                 # end_datetime=end_date,
                 need_extended_hours_data=None

@@ -42,6 +42,7 @@ scipy
 selenium
 sqlalchemy
 
+
 # User interface.
 streamlit
 
@@ -62,3 +63,4 @@ memory-profiler
 # Testing
 webdriver-manager
 streamlit-aggrid
+# sqlalchemy
