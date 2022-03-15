@@ -2,3 +2,5 @@
 */temp*
 */*/temp*
 temp?
+.venv
+.env*
