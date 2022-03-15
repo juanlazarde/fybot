@@ -142,6 +142,14 @@ def cleanup_option_table(options: pd.DataFrame):
     opt = options.copy()
     # Measure it:
     # print(f"{sum(opt.memory_usage(deep=True))/1024:,.2f}Kb")
+    drop_columns = [
+        'optionDeliverablesList',
+        'deliverableNote',
+        'tradeDate',
+        'settlementType',
+        'isIndexOption'
+    ]
+    opt.drop(drop_columns, axis=1, inplace=True)
     opt.replace(["", " ", None, "NaN"], float('NaN'), inplace=True)
     opt.dropna(axis='columns', how='all', inplace=True)
     opt = optimize_pd(opt, deal_with_na='drop', verbose=False)

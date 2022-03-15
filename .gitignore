@@ -657,3 +657,4 @@ venv/share/
 !/fybot/core/option_sniper/test_old.xlsx
 !/fybot/core/option_sniper/test.xlsx
 
+/.run/
