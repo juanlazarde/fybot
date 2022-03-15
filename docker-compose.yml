@@ -1,0 +1,63 @@
+---
+# https://github.com/compose-spec/compose-spec/blob/master/spec.md
+
+version: "3"
+services:
+  app:
+    container_name: fybot
+    build: .
+    image: local/fybot:beta
+    hostname: fybot
+    restart: unless-stopped
+    ports:
+      - 8501:8501
+    volumes:
+      - ./fybot:/usr/src/fybot
+    networks:
+      - fybot-net
+      - db-net
+    depends_on:
+      - db-server
+
+  db-server:
+    container_name: db-server
+    image: postgres:13
+    hostname: ${DB_HOST}
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_USER}
+    ports:
+      - ${DB_PORT}:5432
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./fybot/config/create_tables.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - db-net
+
+  db-admin:
+    container_name: db-admin
+    image: adminer
+    hostname: db-admin
+    restart: unless-stopped
+    environment:
+      - ADMINER_DEFAULT_SERVER=${DB_HOST}
+      - ADMINER_DESIGN=pepa-linha
+    ports:
+      - 8080:8080
+    depends_on:
+      - db-server
+    networks:
+      - fybot-net
+      - db-net
+
+volumes:
+  db-data:
+    name: db-data
+
+networks:
+  fybot-net:
+    name: fybot-net
+  db-net:
+    name: db-net

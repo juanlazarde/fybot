@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+# Use when updating fybot's Dockerfile
+# Usage: bash again
+
+docker container stop fybot
+docker container rm fybot
+docker build -t local/fybot:beta .
+docker compose up -d
