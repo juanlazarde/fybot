@@ -19,5 +19,26 @@ Financial dashboard with technical scanner, news, and options analysis.
 * If 'run fybot' does not work, a bat script can be used. In the meantime, use `run streamlit run fybot/app.py`
 * **Win**: edit path and create shortcut to `fybot.bat`
 
+# Docker installation
+1. Install Docker for Windows or Mac: https://www.docker.com/products/docker-desktop
+2. Install Docker for linux
+
+
+    curl -LJO https://raw.githubusercontent.com/juanlazarde/fybot/master/docker-install.sh
+
+3. Download the repository:
+
+
+    git clone https://github.com/juanlazarde/fybot.git
+    cd fybot
+
+4. Edit `.env` and review `docker-compose.yml`.
+5. Compile and run docker:
+
+
+    docker compose up -d
+
+6. Check http://localhost:8501
+
 ### Fybot's Notebooks
 * [Reference Library - for collaboration](https://colab.research.google.com/drive/1qHAt9MiIJtdKBuGhlcfL0wNLCAXwo6Pr?usp=sharing)
