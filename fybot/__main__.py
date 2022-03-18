@@ -17,7 +17,7 @@ def _create_table():
         $ python fybot create_table
     """
     if sys.argv[1] in ["create_tables", "create_table", "create", "table",
-                       "reset", "createtable", "start", "install"]:
+                       "tables", "reset", "createtable", "start", "install"]:
         try:
             from core.database import Database
             Database().create_table()
@@ -39,7 +39,7 @@ def _helpme():
         print("""
                 FyBot
                 
-                FyBot is a Finacial tool to analyze stocks and options.
+                FyBot is a Financial tool to analyze stocks and options.
                 
                 1) Install: (creates: config/config.py & account.key)
                     $ python fybot setup
@@ -54,7 +54,7 @@ def _helpme():
 
 
 def _setup():
-    """Install fybot in local envirionment.
+    """Install fybot in local environment.
 
     Usage::
 

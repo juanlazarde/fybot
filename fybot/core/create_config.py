@@ -63,11 +63,12 @@ def create_config(filename: str = '../config/config-test.py'):
     """
 
     p = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir, 'config'))
-    with open(os.path.join(p, filename), 'w') as f:
+    full_path = os.path.join(p, filename)
+    with open(full_path, 'w') as f:
         f.write(body)
 
-    print("\nConfiguration file: config/config.py has been created or replaced.\n"
-          "KEEP THIS FILE SECRET. DO NOT SHARE. INCLUDE IT THE .gitignore")
+    print(f"\nConfiguration file: {full_path} has been created or replaced.\n"
+          "KEEP THIS FILE SECRET. DO NOT SHARE. INCLUDE IT IN THE .gitignore")
 
 
 if __name__ == '__main':

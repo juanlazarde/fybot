@@ -3,42 +3,76 @@
 # FyBot - Financial Bot in Python
 Financial dashboard with technical scanner, news, and options analysis.
 
-## Install
-* It's recommended to create a virtual environment (i.e. venv) 
-* Install dependencies: `pip3 install -r requirements.txt` (developed in Python 3.8)
-* If ta-lib gives error: get [download](https://www.lfd.uci.edu/~gohlke/pythonlibs/#ta-lib) and run `pip3 install A_Lib‑0.4.19‑cpXX‑cpXX‑win_amd64.whl`
-* [Download](https://www.postgresql.org/download/) and Install PostgreSQL
-* Configure `config.py`, under `config` directory. 
-* Encrypt your TDA account: run `fybot` and select **Encrypt TDA Account**
-* Create new database, i.e. 'source'.
-* Create tables in database by running `python fybot create_table`
+# Install
+Install Python. Latest version 3.9.11. [Download](https://www.python.org/downloads/)
 
-## Run
-* Run `python fybot`. Normal operation will open a browser.
+    # linux
+    sudo apt update && sudo apt install software-properties-common
+    sudo add-apt-repository ppa:deadsnakes/ppa
+    sudo apt install python3.9
 
-* If 'run fybot' does not work, a bat script can be used. In the meantime, use `run streamlit run fybot/app.py`
-* **Win**: edit path and create shortcut to `fybot.bat`
+    # win PowerShell
+    Register-PackageSource -Name Nuget -Location "http://www.nuget.org/api/v2" –ProviderName Nuget -Trusted
+    Install-Package python39 -Scope CurrentUser
+
+Create project directory
+
+    mkdir ~/fybot
+    cd fybot
+
+Create a virtual environment
+
+    python -m venv .venv
+    ./.venv/Scripts/activate
+
+Windows: First, install Technical Analysis Library (TA-lib): [Download here](https://www.lfd.uci.edu/~gohlke/pythonlibs/#ta-lib)
+
+    python -m pip install TA_Lib‑0.4.24‑cpXX‑cpXX‑win_amd64.whl
+    # where XX is the Python version
+
+Install dependencies 
+
+    python -m pip install -r requirements.txt
+
+Create Configuration file
+
+    python fybot setup
+    
+    # verify with linux
+    nano ./fybot/config/config.py
+    # verify with win
+    notepad ./fybot/config/config.py
+
+Install PostgresSQL. [Download here](https://www.postgresql.org/download/). Then create Database tables
+
+    ./.venv/Scripts/activate
+    python fybot tables
+
+# Run
+Expect a browser to open at `http://localhost:8501` after running this line:
+
+    ./.venv/Scripts/activate
+    python fybot
 
 # Docker installation
-1. Install Docker for Windows or Mac: https://www.docker.com/products/docker-desktop
-2. Install Docker for linux
+Install Docker for Windows or Mac. [Download here](https://www.docker.com/products/docker-desktop)
 
+Install Docker for Linux
    
     curl -LJO https://raw.githubusercontent.com/juanlazarde/fybot/master/docker-install.sh
 
-3. Download the repository:
-
+Download the repository:
 
     git clone https://github.com/juanlazarde/fybot.git
     cd fybot
 
-4. Edit `.env` and review `docker-compose.yml`.
-5. Compile and run docker:
+Edit `.env` and review `docker-compose.yml`.
 
+Compile and run docker:
 
-    docker compose up -d
+    docker compose up -d --build
 
-6. Check http://localhost:8501
+Check http://localhost:8501
 
 ### Fybot's Notebooks
 * [Reference Library - for collaboration](https://colab.research.google.com/drive/1qHAt9MiIJtdKBuGhlcfL0wNLCAXwo6Pr?usp=sharing)
