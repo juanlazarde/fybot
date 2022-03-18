@@ -19,7 +19,7 @@ MENU_GET_HELP = "https://github.com/juanlazarde/fybot"
 MENU_BUG = "https://github.com/juanlazarde/fybot/issues"
 MENU_ABOUT = "# FyBot #" \
              "Financial dashboard: technical scanner, news, & options analysis"
-DEFAULT_PAGE = 2
+DEFAULT_PAGE = 1
 PAGES = {
     "News": pages.news,
     "Scan": pages.scanner,

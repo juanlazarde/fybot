@@ -22,7 +22,8 @@ def create_config(filename: str = '../config/config-test.py'):
     db_password = input("Password? (default: diamondhands) :")
     db_password = 'diamondhands' if db_password == '' else db_password
     print("\nSecrets:")
-    secret_key = fix_path(input("Where is the secret key file 'account.key'? i.e. C:/user/secrets/account.key: "), path_type='file')
+    secret_key = input("Where is the secret key file 'account.key'? i.e. C:/user/secrets/account.key: ")
+    secret_key = fix_path(secret_key, path_type='file')
     print("\nTDA info:")
     tda_token = input("Where is the TDA token? i.e. c:/user/td_access_token.pickle: ")
     tda_api = input("What is the TDA API? i.e. BUOUBBNMFG@AMER.OAUTHAP: ")

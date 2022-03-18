@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import ta
+import ta.trend
 import talib
 import yfinance as yf
 

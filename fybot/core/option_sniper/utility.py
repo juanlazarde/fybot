@@ -162,7 +162,7 @@ def divider(characters=140):
 
 
 def split(a, n):
-    """Splits list a into n equal sizes.
+    """Splits list 'a' into 'n' equal sizes.
 
     Generator syntax is list(split(a,n))
 

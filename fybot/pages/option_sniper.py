@@ -341,7 +341,7 @@ def app():
         )
 
         # Submit to run Option Sniper script
-        hunt = st.form_submit_button("Snipe")
+        hunt = st.form_submit_button(label="Snipe")
 
         # debug
         # hunt = True

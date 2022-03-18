@@ -8,6 +8,7 @@ import asyncpg
 import httpx
 import pandas as pd
 import yfinance as yf
+from tda import client
 
 from core.database import Database
 import core.settings as ss

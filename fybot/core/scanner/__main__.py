@@ -23,7 +23,7 @@ def refresh_data(forced: bool = False, save_to_file: bool = False):
     """
 
     s = t()
-    symbols = sn.GetAssets(forced).symbols
+    symbols = sn.GetAssets(forced=forced).symbols
     sn.GetFundamental(symbols, forced)
     print("Fundamentals Done")
     sn.GetPrice(symbols, forced)

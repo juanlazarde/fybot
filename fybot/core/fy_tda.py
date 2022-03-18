@@ -24,10 +24,10 @@ class TDA:
         :param is_asyncio: If True TDA runs in Asyncio mode.
         :return: TDA 'client' connection.
         """
-        API_KEY = ss.TDA_API_KEY
-        REDIRECT_URL = ss.TDA_REDIRECT_URI
-        TOKEN = ss.TDA_TOKEN
-        self.establish_client(API_KEY, REDIRECT_URL, TOKEN, is_asyncio)
+        api_key = ss.TDA_API_KEY
+        redirect_url = ss.TDA_REDIRECT_URI
+        token = ss.TDA_TOKEN
+        self.establish_client(api_key, redirect_url, token, is_asyncio)
 
     def establish_client(
             self,

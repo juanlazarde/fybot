@@ -10,7 +10,7 @@ services:
     hostname: fybot
     restart: unless-stopped
     ports:
-      - 8501:8501
+      - "8501:8501"
     volumes:
       - ./fybot:/usr/src/fybot
     networks:
@@ -45,7 +45,7 @@ services:
       - ADMINER_DEFAULT_SERVER=${DB_HOST}
       - ADMINER_DESIGN=pepa-linha
     ports:
-      - 8080:8080
+      - "8080:8080"
     depends_on:
       - db-server
     networks:
@@ -54,10 +54,7 @@ services:
 
 volumes:
   db-data:
-    name: db-data
 
 networks:
   fybot-net:
-    name: fybot-net
   db-net:
-    name: db-net

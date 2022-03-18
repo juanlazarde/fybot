@@ -4,7 +4,7 @@
 # export DOCKER_BUILDKIT=1 
 
 # Python base
-FROM python:3.8
+FROM python:3.10-slim
 # Maintainer property
 LABEL maintainer="fybot@lazarde.com"
 # Upgrades pip
@@ -15,7 +15,7 @@ WORKDIR /usr/src/fybot
 COPY requirements.txt .
 # Install Ta-Lib which is a pain in the 4$$
 RUN apt install -y wget && \
-    wget http://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
+    wget https://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
     tar -xvzf ta-lib-0.4.0-src.tar.gz && \
     cd ta-lib/ && \
     ./configure --prefix=/usr && \

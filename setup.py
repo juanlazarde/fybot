@@ -21,7 +21,7 @@ setuptools.setup(
     version='0.0.1',
     packages=setuptools.find_packages(),
     package_dir={'': 'fybot'},
-    package_data=setuptools.find_namespace_packages(),
+    # package_data=setuptools.find_namespace_packages(),
     namespace_packages=['fybot'],
     url='https://github.com/juanlazarde/fybot',
     license='Apache License',

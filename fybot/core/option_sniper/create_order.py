@@ -1,9 +1,9 @@
-import pandas as pd
-import streamlit as st
-import st_aggrid
-df = pd.read_csv('https://raw.githubusercontent.com/fivethirtyeight/data/master/airline-safety/airline-safety.csv')
-st_aggrid.AgGrid(df)
-st_grid
+# import pandas as pd
+# import streamlit as st
+# import st_aggrid
+# df = pd.read_csv('https://raw.githubusercontent.com/fivethirtyeight/data/master/airline-safety/airline-safety.csv')
+# st_aggrid.AgGrid(df)
+# st_grid
 
 # pd.set_option('display.max_colwidth', 500)
 #

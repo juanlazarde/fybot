@@ -6,13 +6,7 @@ import core.settings as ss
 from core.scanner.scanner import Scan
 
 
-def rerun():
-    raise st.script_runner.RerunException(
-        st.script_request_queue.RerunData(None))
-
-
 def get_table(selected_filters: dict):
-
     # run filter function and save result to database
     Signals(selected_filters)
 
@@ -38,6 +32,10 @@ def check_selections(active_filters: list):
 
 
 def app():
+    # Main body
+    main_title = st.empty()
+    main_body = st.empty()
+
     # Navigation menu
     left_nav, right_nav = st.sidebar.columns([1, 1])
     if left_nav.button("Refresh data"):
@@ -50,31 +48,28 @@ def app():
             snap.save_files()
             st.info(f"""Data saved at: {ss.DATASET_DIR}""")
 
-    # Main page
-    with st.form(key='my_form'):
+    with st.sidebar.form(key='my_form', clear_on_submit=False):
         st.title("Financial Scanner")
-        st.write("""Select the filters for the scanner: [1 bar = 1 day]""")
+        st.write("[1 bar = 1 day]")
 
         selected_filters = ss.DEFAULT_FILTERS
-        column_width = [1, 2, 2]
-        left, center, right = st.columns(column_width)
-        selected_filters['consolidating']['go'] = left.checkbox(
+
+        selected_filters['consolidating']['go'] = st.checkbox(
             label="Consolidating within",
             value=ss.DEFAULT_FILTERS['consolidating']['go'],
         )
-        selected_filters['consolidating']['pct'] = center.number_input(
+        selected_filters['consolidating']['pct'] = st.number_input(
             label="pct",
             min_value=0.0,
             value=ss.DEFAULT_FILTERS['consolidating']['pct'],
             step=0.1,
         )
 
-        left, center, right = st.columns(column_width)
-        selected_filters['breakout']['go'] = left.checkbox(
+        selected_filters['breakout']['go'] = st.checkbox(
             label="Breakout within",
             value=ss.DEFAULT_FILTERS['breakout']['go']
         )
-        selected_filters['breakout']['pct'] = center.number_input(
+        selected_filters['breakout']['pct'] = st.number_input(
             label="pct",
             min_value=0.0,
             value=ss.DEFAULT_FILTERS['breakout']['pct'],
@@ -96,24 +91,23 @@ def app():
             value=ss.DEFAULT_FILTERS['candlestick']['go']
         )
 
-        left, center, right = st.columns(column_width)
-        selected_filters['sma_filter']['go'] = left.checkbox(
+        selected_filters['sma_filter']['go'] = st.checkbox(
             label="SMA fast above slow",
             value=ss.DEFAULT_FILTERS['sma_filter']['go'],
             help="(bullish) signals fast sma crossing over higher than slow "
                  "sma in the latest period"
         )
-        selected_filters['sma_filter']['fast'] = center.number_input(
+        selected_filters['sma_filter']['fast'] = st.number_input(
             label="fast (bars)",
-            min_value=0,
-            value=ss.DEFAULT_FILTERS['sma_filter']['fast'],
-            step=1
+            min_value=0.0,
+            value=float(ss.DEFAULT_FILTERS['sma_filter']['fast']),
+            step=1.0
         )
-        selected_filters['sma_filter']['slow'] = right.number_input(
+        selected_filters['sma_filter']['slow'] = st.number_input(
             label="slow (bars)",
-            min_value=0,
-            value=ss.DEFAULT_FILTERS['sma_filter']['slow'],
-            step=1
+            min_value=0.0,
+            value=float(ss.DEFAULT_FILTERS['sma_filter']['slow']),
+            step=1.0
         )
 
         selected_filters['ema_stacked']['go'] = st.checkbox(
@@ -129,22 +123,28 @@ def app():
         )
 
         active_filters = [k for k in selected_filters if selected_filters[k]['go']]
-
-        # check for empty answers
-        if len(active_filters) == 0:
-            st.warning("Make a selection")
-            st.stop()
+        # import pandas
+        # data_view = pandas.DataFrame(None)
 
         # Run scan
         scan_btn = st.form_submit_button(label="Run Scan")
+
         if scan_btn:
+            # check for empty answers
+            if len(active_filters) == 0:
+                st.warning("Make a selection")
+                st.stop()
+
             # get data amd leave it on cache
             with st.spinner("Retrieving data..."):
                 data = get_table(selected_filters)
 
-                # prepare view
-                data_view = data.drop(columns=active_filters)
-                st.dataframe(data_view)
+            # prepare view
+            data_view = data.drop(columns=active_filters)
+
+            # show table
+            main_title.text(active_filters)
+            main_body.table(data_view)
 
             # show the latest price_history database update
             price_update_dt, within24 = Scan.last_update('price_history')

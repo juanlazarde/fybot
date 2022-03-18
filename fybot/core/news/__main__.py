@@ -100,7 +100,7 @@ def show_reddit(subsources, num_days):
 
 def _show_reddit_dict():
     analysis = {}
-    with Database as db:
+    with Database() as db:
         query = "SELECT COUNT(*) FROM mention"
         analysis['count'] = db.query(query)
 
