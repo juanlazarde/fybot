@@ -1,4 +1,4 @@
-<img src="https://github.com/juanlazarde/fybot/blob/master/fybot/fybot/lib/fybot_still.gif?raw=true" alt="FyBot" width="50%" height="50%">
+<img src="https://raw.githubusercontent.com/juanlazarde/fybot/master/fybot/lib/fybot_still.gif" alt="FyBot" width="50%" height="50%">
 
 # FyBot - Financial Bot in Python
 Financial dashboard with technical scanner, news, and options analysis.
