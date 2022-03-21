@@ -1,4 +1,4 @@
-<img src="https://raw.githubusercontent.com/juanlazarde/fybot/master/fybot/lib/fybot_still.gif" alt="FyBot" width="50%" height="50%">
+<img src="https://raw.githubusercontent.com/juanlazarde/fybot/master/fybot/fybot_still.gif" alt="FyBot" width="50%" height="50%">
 
 # FyBot - Financial Bot in Python
 Financial dashboard with technical scanner, news, and options analysis.
@@ -59,6 +59,8 @@ Install Docker for Windows or Mac. [Download here](https://www.docker.com/produc
 
 Install Docker for Linux
    
+    mkdir fybot
+    cd fybot
     curl -LJO https://raw.githubusercontent.com/juanlazarde/fybot/master/docker-install.sh
 
 Download the repository:
@@ -72,7 +74,11 @@ Compile and run docker:
 
     docker compose up -d --build
 
+Create the config file
+
+    docker run -it local/fybot setup  
+
 Check http://localhost:8501
 
-### Fybot's Notebooks
+### Fybot Notebooks
 * [Reference Library - for collaboration](https://colab.research.google.com/drive/1qHAt9MiIJtdKBuGhlcfL0wNLCAXwo6Pr?usp=sharing)
