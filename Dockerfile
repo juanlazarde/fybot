@@ -4,7 +4,7 @@
 # export DOCKER_BUILDKIT=1 
 
 # Python base
-FROM python:3.10-slim
+FROM python:3.9-slim
 # Maintainer property
 LABEL maintainer="fybot@lazarde.com"
 # Upgrades pip
