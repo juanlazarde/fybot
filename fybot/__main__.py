@@ -1,7 +1,7 @@
 import os
 import sys
 
-# from streamlit import cli
+from streamlit.web import cli
 
 import logging
 from logging.config import fileConfig
