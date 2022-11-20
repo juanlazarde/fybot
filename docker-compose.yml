@@ -29,7 +29,7 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_USER=${DB_USER}
     ports:
-      - ${DB_PORT}:5432
+      - 54320:5432
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./fybot/config/create_tables.sql:/docker-entrypoint-initdb.d/init.sql
@@ -54,6 +54,7 @@ services:
 
 volumes:
   db-data:
+
 
 networks:
   fybot-net:

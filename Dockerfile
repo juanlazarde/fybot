@@ -13,17 +13,23 @@ RUN pip install --upgrade pip
 WORKDIR /usr/src/fybot
 # Copy dependencies
 COPY requirements.txt .
+
+# update and prep debian
+RUN apt-get update && \
+    apt-get install build-essential -y && \
+    apt-get -y install libpq-dev gcc
+
 # Install Ta-Lib which is a pain in the 4$$
 RUN apt install -y wget && \
     wget https://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
     tar -xvzf ta-lib-0.4.0-src.tar.gz && \
     cd ta-lib/ && \
-    ./configure --prefix=/usr && \
+    ./configure --prefix=/usr --build=aarch64-unknown-linux-gnu && \
     make && \
     make install
 RUN rm -R ta-lib ta-lib-0.4.0-src.tar.gz
 # Install dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN python3 -m pip install -r requirements.txt --no-cache-dir
 # Copy source code to working directory
 COPY /fybot .
 # Python variable to print logs real-time, set to 0 for production

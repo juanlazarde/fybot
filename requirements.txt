@@ -51,6 +51,7 @@ alpaca-trade-api
 tda-api~=1.5.2
 yahooquery~=2.2.15
 yfinance~=0.1.70
+memory_profiler
 
 # Finance tools.
 ta~=0.9.0
@@ -58,7 +59,7 @@ ta~=0.9.0
 # Visit this: https://pypi.org/project/TA-Lib/
 # Download compiled windows version here: https://www.lfd.uci.edu/~gohlke/pythonlibs/#ta-lib
 # python -m pip install .\TA_Lib-0.4.24-cp310-cp310-win_amd64.whl
-ta-lib
+ta-lib # for mac first install via brew install ta-lib
 
 # Testing tools, not useful in production.
 line-profiler~=3.4.0

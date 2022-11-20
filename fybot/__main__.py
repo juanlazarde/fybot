@@ -1,6 +1,7 @@
 import os
 import sys
-import streamlit.cli as cli
+
+# from streamlit import cli
 
 import logging
 from logging.config import fileConfig
@@ -16,10 +17,20 @@ def _create_table():
 
         $ python fybot create_table
     """
-    if sys.argv[1] in ["create_tables", "create_table", "create", "table",
-                       "tables", "reset", "createtable", "start", "install"]:
+    if sys.argv[1] in [
+        "create_tables",
+        "create_table",
+        "create",
+        "table",
+        "tables",
+        "reset",
+        "createtable",
+        "start",
+        "install",
+    ]:
         try:
             from core.database import Database
+
             Database().create_table()
             sys.exit()
         except Exception as err:
@@ -34,9 +45,21 @@ def _helpme():
 
         $ python fybot help
     """
-    if sys.argv[1] in ["help", "h", "?", "ayuda", "sos", "-help",
-                       "--help", "-h", "--h", "/h", "/help"]:
-        print("""
+    if sys.argv[1] in [
+        "help",
+        "h",
+        "?",
+        "ayuda",
+        "sos",
+        "-help",
+        "--help",
+        "-h",
+        "--h",
+        "/h",
+        "/help",
+    ]:
+        print(
+            """
                 FyBot
                 
                 FyBot is a Financial tool to analyze stocks and options.
@@ -49,7 +72,8 @@ def _helpme():
                     
                 3) Run:
                     $ python fybot
-                """)
+                """
+        )
         sys.exit()
 
 
@@ -61,25 +85,39 @@ def _setup():
         $ python fybot setup
     """
     # TODO: Testing config creation
-    if sys.argv[1] in ["setup", "s", "set", "config", "configurar", "-setup",
-                       "--setup", "-s", "--s", "/s", "/setup", "-config",
-                       "-configurar"]:
+    if sys.argv[1] in [
+        "setup",
+        "s",
+        "set",
+        "config",
+        "configurar",
+        "-setup",
+        "--setup",
+        "-s",
+        "--s",
+        "/s",
+        "/setup",
+        "-config",
+        "-configurar",
+    ]:
 
-        create_config(r'config.py')
+        create_config(r"config.py")
         sys.exit(0)
 
 
 def _error_handling(error: Exception or str) -> None:
-    print("""
+    print(
+        """
             FyBot
 
             Usage: python fybot [create_table] [help]
             Try: 'python fybot help' for help
-            """)
+            """
+    )
     sys.exit(error)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     fileConfig(ss.LOGGING_FILE, disable_existing_loggers=False)
     log = logging.getLogger(__name__)
 
@@ -89,7 +127,7 @@ if __name__ == '__main__':
             _create_table()
             _helpme()
             _setup()
-            _error_handling('')
+            _error_handling("")
 
         sys.argv = [
             "streamlit",
