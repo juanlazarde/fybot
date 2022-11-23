@@ -8,8 +8,6 @@ FROM python:3.9-slim
 # Maintainer property
 LABEL maintainer="fybot@lazarde.com"
 
-EXPOSE 8501
-
 # Upgrades pip
 RUN pip install --upgrade pip
 # Volume working directory
@@ -45,14 +43,16 @@ ENV PYTHONUNBUFFERED=0
 EXPOSE 8501/tcp
 # Force Streamlit to use specified port
 ENV STREAMLIT_SERVER_PORT=8501
+
 # Run command
 
 # COPY entry.sh /scripts/entry.sh
 # RUN ["chmod", "+x", "/scripts/entry.sh"]
 
-ENTRYPOINT ["python3", "/usr/src/fybot"]
+# ENTRYPOINT ["python3", "/usr/src/fybot"]
 # ENTRYPOINT ["/bin/sh", "-c" , "/usr/src/fybot/entry.sh"]
 # ENTRYPOINT  ["/scripts/entry.sh"]]
 # ENTRYPOINT ["/bin/sh", "-c" , "python3 /usr/src/fybot && python3 /usr/src/fybot/config/create_tables.py" ]
 # ENTRYPOINT ["python3", "/usr/src/fybot", "--server.port=8501", "--server.address=0.0.0.0"]
 # ENTRYPOINT ["streamlit", "run", "/usr/src/fybot/option_sniper.py", "--server.port=8501", "--server.address=0.0.0.0"]
+ENTRYPOINT ["streamlit", "run", "/usr/src/fybot/app.py", "--server.port=8501", "--server.address=0.0.0.0"]

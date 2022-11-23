@@ -70,3 +70,6 @@ memory-profiler~=0.60.0
 webdriver-manager
 streamlit-aggrid
 setuptools~=60.10.0
+
+# to get another streamlit app working
+altair
