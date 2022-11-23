@@ -7,6 +7,9 @@
 FROM python:3.9-slim
 # Maintainer property
 LABEL maintainer="fybot@lazarde.com"
+
+EXPOSE 8501
+
 # Upgrades pip
 RUN pip install --upgrade pip
 # Volume working directory
@@ -16,12 +19,16 @@ COPY requirements.txt .
 
 # update and prep debian
 RUN apt-get update && \
-    apt-get install build-essential -y && \
-    apt-get -y install libpq-dev gcc
+    apt-get install -y \
+    build-essential \
+    software-properties-common \
+    git \
+    wget \
+    libpq-dev gcc && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install Ta-Lib which is a pain in the 4$$
-RUN apt install -y wget && \
-    wget https://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
+RUN wget https://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
     tar -xvzf ta-lib-0.4.0-src.tar.gz && \
     cd ta-lib/ && \
     ./configure --prefix=/usr --build=aarch64-unknown-linux-gnu && \
@@ -39,4 +46,13 @@ EXPOSE 8501/tcp
 # Force Streamlit to use specified port
 ENV STREAMLIT_SERVER_PORT=8501
 # Run command
+
+# COPY entry.sh /scripts/entry.sh
+# RUN ["chmod", "+x", "/scripts/entry.sh"]
+
 ENTRYPOINT ["python3", "/usr/src/fybot"]
+# ENTRYPOINT ["/bin/sh", "-c" , "/usr/src/fybot/entry.sh"]
+# ENTRYPOINT  ["/scripts/entry.sh"]]
+# ENTRYPOINT ["/bin/sh", "-c" , "python3 /usr/src/fybot && python3 /usr/src/fybot/config/create_tables.py" ]
+# ENTRYPOINT ["python3", "/usr/src/fybot", "--server.port=8501", "--server.address=0.0.0.0"]
+# ENTRYPOINT ["streamlit", "run", "/usr/src/fybot/option_sniper.py", "--server.port=8501", "--server.address=0.0.0.0"]

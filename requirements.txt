@@ -32,7 +32,8 @@ cryptography~=36.0.2
 httpx~=0.22.0
 lxml~=4.8.0
 matplotlib~=3.5.1
-numpy~=1.22.3
+# numpy~=1.22.3
+numpy
 pandas~=1.4.1
 psaw~=0.1.0
 psycopg2~=2.9.3

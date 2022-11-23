@@ -1,24 +1,8 @@
--- download PostgreSQL server: https://www.enterprisedb.com/downloads/postgres-postgresql-downloads
+-- docker database initialization script
+-- initialization will be skipped if a database already exists
+-- the name of the database is set in docker-compose.yml with POSTGRES_DB: ${DB_NAME}
 
--- Run this in the terminal
--- python app.py create_table
-
--- DATABASE: source
-
--- DROP DATABASE IF EXISTS source;
-
-CREATE DATABASE source
-    WITH
-    OWNER = postgres
-    ENCODING = 'UTF8'
-    LC_COLLATE = 'English_United States.1252'
-    LC_CTYPE = 'English_United States.1252'
-    TABLESPACE = pg_default
-    CONNECTION LIMIT = -1;
-
--- SCHEMA: public
-
--- DROP SCHEMA public ;
+DROP SCHEMA public ;
 
 CREATE SCHEMA public
     AUTHORIZATION postgres;
@@ -30,16 +14,17 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 
 GRANT ALL ON SCHEMA public TO postgres;
 
--- Delete the tables
+-- This is not necessary as this script runs only if no DB has been initialized.
+-- Delete the tables.
 
-DROP TABLE IF EXISTS signals;
-DROP TABLE IF EXISTS mention;
-DROP TABLE IF EXISTS fundamentals;
-DROP TABLE IF EXISTS portfolio;
-DROP TABLE IF EXISTS price_history;
-DROP TABLE IF EXISTS last_update;
-DROP TABLE IF EXISTS rejected_symbols;
-DROP TABLE IF EXISTS symbols;
+-- DROP TABLE IF EXISTS signals;
+-- DROP TABLE IF EXISTS mention;
+-- DROP TABLE IF EXISTS fundamentals;
+-- DROP TABLE IF EXISTS portfolio;
+-- DROP TABLE IF EXISTS price_history;
+-- DROP TABLE IF EXISTS last_update;
+-- DROP TABLE IF EXISTS rejected_symbols;
+-- DROP TABLE IF EXISTS symbols;
 
 -- Create the tables
 
