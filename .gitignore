@@ -26,6 +26,5 @@ __pycache__/
 # Project
 datasets/
 excluded_resources/
-fybot/config/config.py
 fybot/config/td_access_token.pickle
 fybot/resources/
