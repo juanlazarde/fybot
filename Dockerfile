@@ -38,7 +38,7 @@ RUN python3 -m pip install -r requirements.txt --no-cache-dir
 # Copy source code to working directory
 COPY /fybot .
 # Python variable to print logs real-time, set to 0 for production
-ENV PYTHONUNBUFFERED=0
+ENV PYTHONUNBUFFERED=1
 # Expose Default Streamlit port on Docker
 EXPOSE 8501/tcp
 # Force Streamlit to use specified port
@@ -46,13 +46,5 @@ ENV STREAMLIT_SERVER_PORT=8501
 
 # Run command
 
-# COPY entry.sh /scripts/entry.sh
-# RUN ["chmod", "+x", "/scripts/entry.sh"]
-
-# ENTRYPOINT ["python3", "/usr/src/fybot"]
-# ENTRYPOINT ["/bin/sh", "-c" , "/usr/src/fybot/entry.sh"]
-# ENTRYPOINT  ["/scripts/entry.sh"]]
-# ENTRYPOINT ["/bin/sh", "-c" , "python3 /usr/src/fybot && python3 /usr/src/fybot/config/create_tables.py" ]
-# ENTRYPOINT ["python3", "/usr/src/fybot", "--server.port=8501", "--server.address=0.0.0.0"]
-# ENTRYPOINT ["streamlit", "run", "/usr/src/fybot/option_sniper.py", "--server.port=8501", "--server.address=0.0.0.0"]
-ENTRYPOINT ["streamlit", "run", "/usr/src/fybot/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+ENTRYPOINT ["python3", "/usr/src/fybot"]
+# ENTRYPOINT ["streamlit", "run", "/usr/src/fybot/app.py", "--server.port=8501", "--server.address=0.0.0.0"]

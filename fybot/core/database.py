@@ -16,12 +16,15 @@ class Database:
 
     def __init__(self):
         try:
-            self._conn = psycopg2.connect(host=ss.DB_HOST,
-                                          database=ss.DB_NAME,
-                                          user=ss.DB_USER,
-                                          password=ss.DB_PASSWORD)
+            self._conn = psycopg2.connect(
+                host=ss.DB_HOST,
+                database=ss.DB_NAME,
+                user=ss.DB_USER,
+                password=ss.DB_PASSWORD,
+            )
             self._cursor = self.connection.cursor(
-                cursor_factory=psycopg2.extras.DictCursor)
+                cursor_factory=psycopg2.extras.DictCursor
+            )
         except Exception as e:
             print(f"Unable to connect to database!\n{e}")
             sys.exit(1)
@@ -68,18 +71,18 @@ class Database:
     @staticmethod
     def parse_sql(sql_file_path):
         """Read *.sql file, parse lines"""
-        with open(sql_file_path, 'r', encoding='utf-8') as f:
+        with open(sql_file_path, "r", encoding="utf-8") as f:
             data = f.read().splitlines()
-        stmt = ''
+        stmt = ""
         stmts = []
         for line in data:
             if line:
-                if line.startswith('--'):
+                if line.startswith("--"):
                     continue
-                stmt += line.strip() + ' '
-                if ';' in stmt:
+                stmt += line.strip() + " "
+                if ";" in stmt:
                     stmts.append(stmt.strip())
-                    stmt = ''
+                    stmt = ""
         return stmts
 
     def create_table(self):
@@ -103,8 +106,11 @@ class Database:
             if close:
                 self.close()
             now_utc = pytz.utc.localize(datetime.utcnow())
-            within24 = None if timestamp is None else \
-                (now_utc - timestamp).total_seconds() <= 24 * 60 * 60
+            within24 = (
+                None
+                if timestamp is None
+                else (now_utc - timestamp).total_seconds() <= 24 * 60 * 60
+            )
         except Exception as e:
             log.debug(e)
             within24 = None
@@ -129,9 +135,9 @@ class Database:
     def update_rejected_symbols(self, symbols, current, close=False):
         """Updates rejected_symbols table with symbols that have problems.
 
-               :param list symbols: list of symbols
-               :param list current: list of rejected symbols
-               :param close: True to close database connection"""
+        :param list symbols: list of symbols
+        :param list current: list of rejected symbols
+        :param close: True to close database connection"""
 
         values = list(set(symbols).difference(current))
         if len(values) != 0:

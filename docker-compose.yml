@@ -6,21 +6,19 @@ services:
   db-server:
     container_name: db-server
     image: postgres:13
-    hostname: ${DB_HOST}
+    hostname: db.server
     restart: always
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_USER: ${DB_USER}
-    logging:
-      options:
-        max-size: 10m
-        max-file: "3"
+    # specify the local path to the .env file
+    # or comment out and use the command below during docker compose
+    # docker compose --env-file /PATH/file.env up
+    env_file:
+      - /Users/ramirezae/fybot.env
     ports:
       - 5432:5432
     volumes:
       - ./db-data:/var/lib/postgresql/data
       - ./fybot/config/create_tables.sql:/docker-entrypoint-initdb.d/init.sql
+
     networks:
       - db-net
 
@@ -30,7 +28,7 @@ services:
     hostname: db-admin
     restart: unless-stopped
     environment:
-      - ADMINER_DEFAULT_SERVER=${DB_HOST}
+      - ADMINER_DEFAULT_SERVER=localhost
       - ADMINER_DESIGN=pepa-linha
     ports:
       - "8080:8080"
@@ -48,8 +46,17 @@ services:
     restart: unless-stopped
     ports:
       - "8501:8501"
+    # the container needs access to the TDA token so this is mounted as volume
+    # map the location of the TDA token to a location accesible by the container.
+    # you only need to replace /Users/ramirezae/.tda/td_access_token.pickle
     volumes:
       - ./fybot:/usr/src/fybot
+      - /Users/ramirezae/.tda/td_access_token.pickle:/usr/src/fybot/config/td_access_token.pickle
+    # specify the local path to the .env file
+    # or comment out and use the command below during docker compose
+    # docker compose --env-file /PATH/file.env up
+    env_file:
+      - /Users/ramirezae/fybot.env
     networks:
       - fybot-net
       - db-net

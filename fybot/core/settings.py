@@ -9,13 +9,13 @@ DEBUG = True
 MAX_SYMBOLS = 20 if DEBUG else None
 
 # define files
-DATASET_DIR = '../datasets'
-LOGGING_FILE = 'config/logging_config.ini'
-SYMBOLS_FILE = 'symbols.csv'
-PRICE_FILE = 'price.pkl'
-FUNDAMENTALS_FILE = 'fundamentals.pkl'
-SIGNALS_FILE = 'signals.pkl'
-TEST_FILE = 'test.pkl'
+DATASET_DIR = "../datasets"
+LOGGING_FILE = "config/logging_config.ini"
+SYMBOLS_FILE = "symbols.csv"
+PRICE_FILE = "price.pkl"
+FUNDAMENTALS_FILE = "fundamentals.pkl"
+SIGNALS_FILE = "signals.pkl"
+TEST_FILE = "test.pkl"
 
 # files with path
 ROOT_DIR = os.path.abspath(os.path.join(__file__, os.pardir, os.pardir))
@@ -59,58 +59,55 @@ ALPACA_ENDPOINT = config.ALPACA_ENDPOINT
 # default values
 # scanner.py filters
 DEFAULT_FILTERS = {
-    'consolidating': {'go': False, 'pct': 6.0},
-    'breakout': {'go': False, 'pct': 2.5},
-    'ttm_squeeze': {'go': False},
-    'in_the_squeeze': {'go': True},
-    'candlestick': {'go': True},
-    'sma_filter': {'go': False, 'fast': 25, 'slow': 100},
-    'ema_stacked': {'go': True},
-    'investor_reco': {'go': False}
+    "consolidating": {"go": False, "pct": 6.0},
+    "breakout": {"go": False, "pct": 2.5},
+    "ttm_squeeze": {"go": False},
+    "in_the_squeeze": {"go": True},
+    "candlestick": {"go": True},
+    "sma_filter": {"go": False, "fast": 25, "slow": 100},
+    "ema_stacked": {"go": True},
+    "investor_reco": {"go": False},
 }
 
 # news.py settings
-NEWS = {
-    'sources': ['Reddit'],
-    'subsources': ['wallstreetbets', 'options']
-}
+NEWS = {"sources": ["Reddit"], "subsources": ["wallstreetbets", "options"]}
 
 # option_sniper.py settings
 OPTION_SNIPER = {
-    'DEBUG': {
-        'save_load_pickle': False,
-        'export': False,
-        'force_download': True,
-        'data': DATASET_DIR,
+    "DEBUG": {
+        "save_load_pickle": False,
+        "export": False,
+        "force_download": True,
+        "data": DATASET_DIR,
     },
-    'WATCHLIST': {
-        'watchlist_0': 'AMD, AMZN, RIVN',
-        'watchlist_1': 'SPY, TQQQ',
-        'watchlist_2': 'TSLA, RIVN, LCID',
-        'watchlist_3': 'AMD, NVDA, AMAT',
-        'watchlist_4': 'PG, JNJ, KC',
-        'watchlist_5': 'META, FB, U, ZM, ZNGA, NVDA, AMD, IMMR, ANET, STX, SHOP, RBLX, FSLY, ADSK',
-        'watchlist_current': '',
-        'tda_watchlist': 'default',
-        'selected': 0
+    "WATCHLIST": {
+        "watchlist_0": "AMD, AMZN, RIVN",
+        "watchlist_1": "SPY, TQQQ",
+        "watchlist_2": "TSLA, RIVN, LCID",
+        "watchlist_3": "AMD, NVDA, AMAT",
+        "watchlist_4": "PG, JNJ, KC",
+        "watchlist_5": "META, FB, U, ZM, ZNGA, NVDA, AMD, IMMR, ANET, STX, SHOP, RBLX, FSLY, ADSK",
+        "watchlist_current": "",
+        "tda_watchlist": "default",
+        "selected": 0,
     },
-    'FILTERS': {
-        'top_n': 5,
-        'min_price': 1.,
-        'max_price': 5000.,
-        'max_risk': 20000.,
-        'min_return_pct': 0.5,
-        'max_dte': 60,
-        'min_dte': 30,
-        'premium_type': "credit",
-        'strategies': "spread",
-        'option_type': "put, call",
-        'max_delta': 0.30,
-        'min_pop': 0.,
-        'min_p50': 0.,
-        'min_volume_pcl': 50.,
-        'min_open_int_pcl': 50.,
-        'max_bid_ask_pcl': 50.,
-        'margin_requirement': 20000.,
+    "FILTERS": {
+        "top_n": 5,
+        "min_price": 1.0,
+        "max_price": 5000.0,
+        "max_risk": 20000.0,
+        "min_return_pct": 0.5,
+        "max_dte": 60,
+        "min_dte": 30,
+        "premium_type": "credit",
+        "strategies": "spread",
+        "option_type": "put, call",
+        "max_delta": 0.30,
+        "min_pop": 0.0,
+        "min_p50": 0.0,
+        "min_volume_pcl": 50.0,
+        "min_open_int_pcl": 50.0,
+        "max_bid_ask_pcl": 50.0,
+        "margin_requirement": 20000.0,
     },
 }
