@@ -24,7 +24,6 @@
 # Get the requirements.txt
 # pipenv -r lock >> requirements.txt
 
-
 aiohttp~=3.8.1
 asyncio~=3.4.3
 asyncpg~=0.25.0

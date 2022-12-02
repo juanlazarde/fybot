@@ -1,24 +1,14 @@
--- download PostgreSQL server: https://www.enterprisedb.com/downloads/postgres-postgresql-downloads
 
--- Run this in the terminal
--- python app.py create_table
+-- docker database initialization script
+-- initialization will be skipped if a database already exists
+-- the name of the database is set in docker-compose.yml with POSTGRES_DB: ${DB_NAME}
 
--- DATABASE: source
+-- DOCKER-ONLY: Version is only for Docker installations. All other installations use fybot/config/create_tables.sql.
+-- WHENEVER ONE IS UPDATED, CONSIDER UPDATING THE OTHER. create_tables_docker.sql <--> create_tables.sql
 
--- DROP DATABASE IF EXISTS source;
+-- Create the schema
 
-CREATE DATABASE source
-    WITH
-    OWNER = postgres
-    ENCODING = 'UTF8'
-    TABLESPACE = pg_default
-    CONNECTION LIMIT = -1;
-
--- SCHEMA: public
-
--- DROP SCHEMA public ;
-
-CREATE SCHEMA public
+CREATE SCHEMA IF NOT EXISTS public
     AUTHORIZATION postgres;
 
 COMMENT ON SCHEMA public
@@ -28,16 +18,6 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 
 GRANT ALL ON SCHEMA public TO postgres;
 
--- Delete the tables
-
-DROP TABLE IF EXISTS signals;
-DROP TABLE IF EXISTS mention;
-DROP TABLE IF EXISTS fundamentals;
-DROP TABLE IF EXISTS portfolio;
-DROP TABLE IF EXISTS price_history;
-DROP TABLE IF EXISTS last_update;
-DROP TABLE IF EXISTS rejected_symbols;
-DROP TABLE IF EXISTS symbols;
 
 -- Create the tables
 

@@ -1,0 +1,10 @@
+.git
+.gitignore
+LICENSE
+README.md
+docker-compose.yml
+manifest.in
+docker-install.sh
+again
+setup.py
+.env.template
