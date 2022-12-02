@@ -38,7 +38,7 @@ RUN python3 -m pip install -r requirements.txt --no-cache-dir
 # Copy source code to working directory
 COPY /fybot .
 # Python variable to print logs real-time, set to 0 for production
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=0
 # Expose Default Streamlit port on Docker
 EXPOSE 8501/tcp
 # Force Streamlit to use specified port
