@@ -3,16 +3,18 @@
 
 version: "3"
 services:
-  app:
+  app: # docker run -it -v ${pwd}:/fybot -w /usr/src/fybot -p 8501:8501 local/fybot:beta /bin/sh
     container_name: fybot
+    image: local/fybot:beta
     build:
+      context: .
       target: development
       # target: production
-    image: local/fybot:beta
     hostname: fybot
     restart: unless-stopped
     ports:
       - "8501:8501"
+      - "5678:5678"
     volumes:
       - ./fybot:/usr/src/fybot
     networks:

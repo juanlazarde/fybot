@@ -7,7 +7,9 @@
 # Usage: sudo docker build -t fybot .
 # Visualize with Buildkit: export DOCKER_BUILDKIT=1 
 
-# Create a Python base with shared environment variables
+##########################################################
+# Create a Python base with shared environment variables #
+##########################################################
 FROM python:3.9-slim AS python-base
 ENV HOME_PATH="/usr/src"
 ENV PYTHONUNBUFFERED=1 \
@@ -21,8 +23,10 @@ ENV PATH="$VENV_PATH/bin:$PATH"
 RUN python -m venv --system-site-packages $VENV_PATH && \
     pip install --upgrade pip setuptools
 
-# Create a builder-base that includes Psycopg2 & TA-LIB dependencies
-FROM python-base AS builder-base
+######################################################################
+# Create a builder-base that includes Psycopg2 & TA-LIB dependencies #
+######################################################################
+FROM python-base AS build
 RUN apt-get --quiet update && \
     apt-get -y --no-install-recommends --quiet --show-progress install apt-utils
 
@@ -45,41 +49,44 @@ RUN apt-get -y --no-install-recommends --quiet --show-progress install \
     pip install ta-lib && \
     cd .. && \
     rm -R ta-lib ta-lib-0.4.0-src.tar.gz
+# fybot requirements
+WORKDIR $FYBOT_PATH
+COPY requirements.txt .
+RUN pip install --requirement requirements.txt
 # cleanup installations
 RUN apt-get --purge -y remove \
-        libpq-dev \
-        wget \
-        build-essential && \
+    libpq-dev \
+    wget \
+    build-essential && \
     apt-get -y autoremove && \
     apt-get autoclean && \
     rm -rf /var/lib/apt/lists/*
 
-# Create 'development' stage to install all dev dependencies
-FROM builder-base AS development
+# streamlit requirements
+ENV STREAMLIT_SERVER_PORT=8501
+EXPOSE $STREAMLIT_SERVER_PORT/tcp
+
+##############################################################
+# Create 'development' stage to install all dev dependencies #
+##############################################################
+FROM build AS development
 ENV STAGE=development \
-    PYTHONUNBUFFERED=1 \
-    STREAMLIT_SERVER_PORT=8501
-COPY --from=builder-base $FYBOT_PATH $FYBOT_PATH
-
-WORKDIR $FYBOT_PATH
-COPY requirements.txt .
-RUN pip install --requirement requirements.txt
+    PYTHONUNBUFFERED=1
+COPY --from=build $FYBOT_PATH $FYBOT_PATH
 COPY /fybot .
+RUN pip install debugpy
+CMD python -m debugpy --host 0.0.0.0 --port 5678 --wait --multiprocess -m fybot
+# Debugpy for VSCode usage: 1) install here, 2) install Python extension in VSCode, 
+# CMD python -m debugpy --host 0.0.0.0 --port 5678 --wait --multiprocess -m flask run -h 0.0.0 -p 5000
 
-EXPOSE $STREAMLIT_SERVER_PORT/tcp
-ENTRYPOINT ["sh", "-c", "python3 $FYBOT_PATH"]
-
-# Create 'production' stage that uses the 'builder-base' to 
-# run production dependencies and scripts
-FROM builder-base AS production
+#############################################################
+# Create 'production' stage that uses the 'builder-base' to #
+# run production dependencies and scripts                   #
+#############################################################
+FROM build AS production
 ENV STAGE=production \
-    PYTHONUNBUFFERED=0 \
-    STREAMLIT_SERVER_PORT=8501
-COPY --from=builder-base $VENV_PATH $VENV_PATH
-
+    PYTHONUNBUFFERED=0
+COPY --from=build $VENV_PATH $VENV_PATH
 WORKDIR $FYBOT_PATH
 COPY /fybot .
-
-EXPOSE $STREAMLIT_SERVER_PORT/tcp
 ENTRYPOINT ["sh", "-c", "python3 $FYBOT_PATH"]
-
