@@ -1,22 +1,29 @@
 ---
 # https://github.com/compose-spec/compose-spec/blob/master/spec.md
+# TODO: Once production is ready, create a separate docker-compose.debug.yml for debugging.
 
 version: "3"
 services:
-  app: # docker run -it -v ${pwd}:/fybot -w /usr/src/fybot -p 8501:8501 local/fybot:beta /bin/sh
-    container_name: fybot
-    image: local/fybot:beta
+  app:
+    container_name: fybot_container
+    image: fybot
     build:
       context: .
       target: development
       # target: production
     hostname: fybot
-    restart: unless-stopped
+    restart: always
     ports:
       - "8501:8501"
       - "5678:5678"
     volumes:
-      - ./fybot:/usr/src/fybot
+      # - ./fybot:/usr/src/fybot
+      - type: volume
+        source: ./fybot
+        target: /usr/src/fybot
+      - type: bind
+        source: /home/.secrets
+        target: /usr/src/.secrets
     networks:
       - fybot-net
       - db-net

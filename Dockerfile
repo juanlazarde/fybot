@@ -10,83 +10,109 @@
 ##########################################################
 # Create a Python base with shared environment variables #
 ##########################################################
-FROM python:3.9-slim AS python-base
-ENV HOME_PATH="/usr/src"
-ENV PYTHONUNBUFFERED=1 \
+ARG PYTHONVERSION="3.9"
+FROM python:$PYTHONVERSION-slim AS base
+
+ENV APP_PATH="/usr/src/fybot" \
+    VIRTUAL_ENV="/opt/venv" \
+    PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=off \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
-    PIP_DEFAULT_TIMEOUT=100 \
-    FYBOT_PATH="$HOME_PATH/fybot" \
-    VENV_PATH="$HOME_PATH/fybot/.venv"
-ENV PATH="$VENV_PATH/bin:$PATH"
-RUN python -m venv --system-site-packages $VENV_PATH && \
-    pip install --upgrade pip setuptools
+    PIP_DEFAULT_TIMEOUT=100
 
-######################################################################
-# Create a builder-base that includes Psycopg2 & TA-LIB dependencies #
-######################################################################
-FROM python-base AS build
-RUN apt-get --quiet update && \
-    apt-get -y --no-install-recommends --quiet --show-progress install apt-utils
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN set -eux && \
+    python -m venv $VIRTUAL_ENV && \
+    pip install --upgrade pip setuptools wheel
 
-# install psycopg2
-# ONCE ALL WORKS, CONSIDER USING psycopg2-binary in the requirements, and remove this section completely
-RUN apt-get -y --no-install-recommends --quiet --show-progress install \
-        libpq-dev \
-        build-essential && \
-    pip install psycopg2
-# install ta-lib (if error try ./configure with '--build aarch64', then 'LDFLAGS="-lm"')
-RUN apt-get -y --no-install-recommends --quiet --show-progress install \
-        wget \
-        build-essential && \
+# streamlit
+ENV STREAMLIT_SERVER_PORT=8501
+EXPOSE $STREAMLIT_SERVER_PORT/tcp
+
+##########################################################
+# Create a build stage to install dependencies           #
+##########################################################
+FROM base as build
+
+RUN set -eux; apt-get update
+
+# install psycopg2 dependencies
+# TODO: Consider psycopg2-binary in requirements.txt and remove this section
+RUN set -eux && \
+    apt-get -y --no-install-recommends install libpq-dev build-essential
+
+# install ta-lib dependencies
+RUN set -eux && \
+    apt-get -y --no-install-recommends install wget build-essential dpkg-dev file && \
+    cd /tmp && \
     wget https://prdownloads.sourceforge.net/ta-lib/ta-lib-0.4.0-src.tar.gz && \
     tar -xvzf ta-lib-0.4.0-src.tar.gz  && \
-    cd ta-lib && \
-    ./configure --prefix=/usr && \
+    cd ta-lib/ && \
+    gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)" && \
+    ./configure --prefix=/usr --build="$gnuArch" && \
     make && \
     make install && \
-    pip install ta-lib && \
     cd .. && \
-    rm -R ta-lib ta-lib-0.4.0-src.tar.gz
+    rm -rf ta-lib*
+
 # fybot requirements
-WORKDIR $FYBOT_PATH
-COPY requirements.txt .
-RUN pip install --requirement requirements.txt
+WORKDIR $APP_PATH
+COPY requirements.txt ../
+RUN set -eux && \
+    pip install --requirement ../requirements.txt
+
 # cleanup installations
-RUN apt-get --purge -y remove \
-    libpq-dev \
-    wget \
-    build-essential && \
+RUN set -eux && \
+    apt-get --purge -y remove libpq-dev wget build-essential dpkg-dev && \
     apt-get -y autoremove && \
     apt-get autoclean && \
     rm -rf /var/lib/apt/lists/*
 
-# streamlit requirements
-ENV STREAMLIT_SERVER_PORT=8501
-EXPOSE $STREAMLIT_SERVER_PORT/tcp
-
 ##############################################################
 # Create 'development' stage to install all dev dependencies #
 ##############################################################
-FROM build AS development
-ENV STAGE=development \
-    PYTHONUNBUFFERED=1
-COPY --from=build $FYBOT_PATH $FYBOT_PATH
-COPY /fybot .
-RUN pip install debugpy
-CMD python -m debugpy --host 0.0.0.0 --port 5678 --wait --multiprocess -m fybot
-# Debugpy for VSCode usage: 1) install here, 2) install Python extension in VSCode, 
-# CMD python -m debugpy --host 0.0.0.0 --port 5678 --wait --multiprocess -m flask run -h 0.0.0 -p 5000
+# Using Debugpy for VSCode. Usage:
+#  1) insert script here.
+#  2) install Python extension in VSCode.
+#  3) create `launch.json` debug configuration.
+#  4) insert breakpoint in the code and hit F5.
 
-#############################################################
-# Create 'production' stage that uses the 'builder-base' to #
-# run production dependencies and scripts                   #
-#############################################################
-FROM build AS production
-ENV STAGE=production \
+FROM base AS development
+ENV DEBUG=1
+
+# app
+COPY --from=build $APP_PATH $APP_PATH
+COPY --from=build $VIRTUAL_ENV $VIRTUAL_ENV
+WORKDIR $APP_PATH
+
+# fybot requirements
+COPY requirements.dev.txt ../
+RUN set -eux && \
+    pip install --requirement ../requirements.dev.txt
+
+# VSCode debugging plugin
+# https://github.com/microsoft/debugpy/wiki
+EXPOSE 5678
+RUN pip install debugpy
+
+# update app
+ADD /fybot .
+
+# run debug command
+CMD ["/bin/sh", "-c", "$VIRTUAL_ENV/bin/python -m debugpy --listen 0.0.0.0:5678 --wait-for-client __main__.py"]
+
+# #############################################################
+# # Create 'production' stage that uses the 'builder-base' to #
+# # run production dependencies and scripts                   #
+# #############################################################
+FROM base AS production
+ENV DEBUG=0 \
     PYTHONUNBUFFERED=0
-COPY --from=build $VENV_PATH $VENV_PATH
-WORKDIR $FYBOT_PATH
+
+# app
+COPY --from=build $VIRTUAL_ENV $VIRTUAL_ENV
+WORKDIR $APP_PATH
 COPY /fybot .
-ENTRYPOINT ["sh", "-c", "python3 $FYBOT_PATH"]
+
+ENTRYPOINT ["/bin/sh", "-c", "$VIRTUAL_ENV/bin/python -m $APP_PATH"]

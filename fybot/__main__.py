@@ -1,6 +1,6 @@
 import os
 import sys
-import streamlit.cli as cli
+from streamlit.web import cli
 
 import logging
 from logging.config import fileConfig

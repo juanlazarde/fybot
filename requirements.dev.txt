@@ -1,0 +1,8 @@
+# Testing tools, not useful in production.
+line-profiler~=3.4.0
+memory-profiler~=0.60.0
+
+# Testing
+webdriver-manager
+streamlit-aggrid
+setuptools

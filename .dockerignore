@@ -8,3 +8,5 @@ docker-install.sh
 again
 setup.py
 .env.template
+**/__pycache__
+**/*.pyc
